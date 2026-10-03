@@ -1,0 +1,452 @@
+<title>影子與高度角實驗室</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+  :root {
+    --bg: #FAFAF7;
+    --ink: #21262E;
+    --muted: #6B7280;
+    --muted-2: #9CA3AF;
+    --card: #FFFFFF;
+    --line: #E8E6E0;
+    --sun: #E07B39;
+    --sun-soft: #FBEFE0;
+    --sky: #3D8FE0;
+    --sky-soft: #E8F2FC;
+    --ground: #B7C4A8;
+    --ground-line: #8FA07C;
+    --shadow-col: #6B7280;
+    --shadow-soft: #E4E2DA;
+    --focus: #3D8FE0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16181C;
+      --ink: #F1F0EC;
+      --muted: #A6ACB6;
+      --muted-2: #7B818C;
+      --card: #1E2126;
+      --line: #2B2F36;
+      --sun: #F0985A;
+      --sun-soft: #3A2C1E;
+      --sky: #6BA9EE;
+      --sky-soft: #1D2A38;
+      --ground: #3A4632;
+      --ground-line: #566246;
+      --shadow-col: #9AA0AA;
+      --shadow-soft: #2A2D33;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16181C;
+    --ink: #F1F0EC;
+    --muted: #A6ACB6;
+    --muted-2: #7B818C;
+    --card: #1E2126;
+    --line: #2B2F36;
+    --sun: #F0985A;
+    --sun-soft: #3A2C1E;
+    --sky: #6BA9EE;
+    --sky-soft: #1D2A38;
+    --ground: #3A4632;
+    --ground-line: #566246;
+    --shadow-col: #9AA0AA;
+    --shadow-soft: #2A2D33;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 28px 20px 60px; }
+  header.top { text-align: center; margin-bottom: 22px; }
+  .eyebrow { font-size: 14px; font-weight: 700; letter-spacing: 0.08em; color: var(--muted-2); margin: 0 0 6px; }
+  h1 { font-size: clamp(26px, 4vw, 34px); font-weight: 900; margin: 0 0 8px; text-wrap: balance; }
+  .lede { font-size: 16px; color: var(--muted); margin: 0; max-width: 560px; margin-inline: auto; line-height: 1.6; }
+
+  .tabs { display: flex; gap: 10px; justify-content: center; margin: 24px 0 20px; flex-wrap: wrap; }
+  .tab-btn {
+    appearance: none; border: 1.5px solid var(--line); background: var(--card); color: var(--ink);
+    font: inherit; font-weight: 700; font-size: 16px; padding: 14px 22px; border-radius: 999px;
+    cursor: pointer; display: flex; align-items: center; gap: 8px; min-height: 48px;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .tab-btn .num { width: 24px; height: 24px; border-radius: 50%; background: var(--line); color: var(--muted); font-size: 13px; display: flex; align-items: center; justify-content: center; flex: none; }
+  .tab-btn[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  .tab-btn[aria-selected="true"] .num { background: var(--bg); color: var(--ink); }
+  .tab-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .stage-card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+    padding: 20px; box-shadow: 0 1px 3px rgba(20,20,20,0.05);
+  }
+  .stage-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
+  .stage-title { font-size: 19px; font-weight: 800; margin: 0 0 4px; }
+  .stage-instr { font-size: 15px; color: var(--muted); margin: 0; max-width: 480px; line-height: 1.6; }
+  .reset-btn {
+    appearance: none; border: 1.5px solid var(--line); background: transparent; color: var(--ink);
+    font: inherit; font-weight: 700; font-size: 14px; padding: 10px 16px; border-radius: 10px;
+    cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 6px;
+  }
+  .reset-btn:hover { border-color: var(--sky); color: var(--sky); }
+  .reset-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+  svg.scene { width: 100%; height: auto; display: block; touch-action: none; user-select: none; }
+  .sun-handle, .angle-handle { cursor: grab; touch-action: none; }
+  .sun-handle:active, .angle-handle:active { cursor: grabbing; }
+
+  .readouts { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+  .readout {
+    flex: 1; min-width: 140px; background: var(--sun-soft); border-radius: 14px; padding: 14px 18px;
+  }
+  .readout.sky { background: var(--sky-soft); }
+  .readout .rlabel { font-size: 13px; font-weight: 700; color: var(--muted); margin: 0 0 2px; }
+  .readout .rvalue { font-size: 24px; font-weight: 900; font-variant-numeric: tabular-nums; margin: 0; }
+  .readout.sun .rvalue { color: var(--sun); }
+  .readout.sky .rvalue { color: var(--sky); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+
+  .note {
+    margin-top: 16px; font-size: 14.5px; color: var(--muted); background: var(--shadow-soft);
+    border-radius: 12px; padding: 12px 16px; line-height: 1.6;
+  }
+  .note b { color: var(--ink); }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">太陽與光・動手玩</p>
+    <h1>影子與高度角實驗室</h1>
+    <p class="lede">用手指拖拖看，親眼觀察太陽的位置怎麼決定影子的方向、長短，還有太陽高度角。</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="選擇活動">
+    <button class="tab-btn" id="tabbtn-1" role="tab" aria-selected="true" aria-controls="panel-1">
+      <span class="num">1</span> 移動太陽，看影子
+    </button>
+    <button class="tab-btn" id="tabbtn-2" role="tab" aria-selected="false" aria-controls="panel-2">
+      <span class="num">2</span> 認識太陽高度角
+    </button>
+  </div>
+
+  <section class="panel active" id="panel-1" role="tabpanel" aria-labelledby="tabbtn-1">
+    <div class="stage-card">
+      <div class="stage-head">
+        <div>
+          <p class="stage-title">拖曳太陽，觀察影子的變化</p>
+          <p class="stage-instr">用手指按住太陽 ☉ 拖動它。太陽愈低、離小人愈遠，影子就會愈長；太陽在正上方時，影子最短。</p>
+        </div>
+        <button class="reset-btn" id="reset-1" type="button">重設</button>
+      </div>
+      <svg class="scene" id="scene1" viewBox="0 0 900 460" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="900" height="460" fill="transparent"></rect>
+        <rect x="0" y="380" width="900" height="80" fill="var(--ground)"></rect>
+        <line x1="0" y1="380" x2="900" y2="380" stroke="var(--ground-line)" stroke-width="3"></line>
+        <line id="ray1" x1="0" y1="0" x2="0" y2="0" stroke="var(--sun)" stroke-width="2" stroke-dasharray="6 6" opacity="0.7"></line>
+        <text id="rayLabel1" font-size="14" font-weight="700" fill="var(--sun)" text-anchor="middle" opacity="0.9">太陽光線</text>
+        <ellipse id="shadow1" cx="450" cy="380" rx="10" ry="7" fill="var(--shadow-col)" opacity="0.85"></ellipse>
+        <g id="person1">
+          <circle cx="450" cy="316" r="16" fill="var(--ink)"></circle>
+          <rect x="440" y="332" width="20" height="48" rx="8" fill="var(--ink)"></rect>
+        </g>
+        <g id="sunhandle1" class="sun-handle">
+          <circle r="30" fill="var(--sun)" stroke="var(--card)" stroke-width="4"></circle>
+          <text y="7" text-anchor="middle" font-size="26">☉</text>
+        </g>
+        <text x="24" y="424" font-size="17" font-weight="700" fill="var(--muted)">東</text>
+        <text x="876" y="424" font-size="17" font-weight="700" fill="var(--muted)" text-anchor="end">西</text>
+      </svg>
+      <div class="readouts">
+        <div class="readout sun">
+          <p class="rlabel">影子方向</p>
+          <p class="rvalue" id="dir1">正下方</p>
+        </div>
+        <div class="readout sky">
+          <p class="rlabel">影子長度</p>
+          <p class="rvalue" id="len1">0 格</p>
+        </div>
+      </div>
+      <p class="note">觀察重點：太陽在小人的<b>東邊</b>，影子就落在<b>西邊</b>；太陽愈靠近地平線，影子拉得愈長。</p>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-2" role="tabpanel" aria-labelledby="tabbtn-2">
+    <div class="stage-card">
+      <div class="stage-head">
+        <div>
+          <p class="stage-title">拖曳天空圓頂或量角器，測量太陽高度角</p>
+          <p class="stage-instr">左邊是天空的立體圓頂，右邊是量角器——拖動任何一邊的太陽或指針，兩邊會一起連動，下方的小人影子也會跟著改變。</p>
+        </div>
+        <button class="reset-btn" id="reset-2" type="button">重設</button>
+      </div>
+      <div class="two-col">
+        <svg class="scene" id="dome" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="domeGrad" cx="50%" cy="20%" r="80%">
+              <stop offset="0%" stop-color="var(--sky-soft)"></stop>
+              <stop offset="100%" stop-color="var(--sky-soft)" stop-opacity="0.2"></stop>
+            </radialGradient>
+          </defs>
+          <path d="M 30 240 A 170 170 0 0 1 370 240" fill="url(#domeGrad)" stroke="var(--sky)" stroke-width="2"></path>
+          <ellipse cx="200" cy="240" rx="170" ry="42" fill="none" stroke="var(--ground-line)" stroke-width="2.5"></ellipse>
+          <ellipse cx="200" cy="240" rx="170" ry="42" fill="var(--ground)" opacity="0.35"></ellipse>
+          <circle cx="200" cy="240" r="7" fill="var(--ink)"></circle>
+          <line id="domeRadius" x1="200" y1="240" x2="30" y2="240" stroke="var(--muted-2)" stroke-width="1.5" stroke-dasharray="4 4"></line>
+          <text x="30" y="264" text-anchor="middle" font-size="14" font-weight="700" fill="var(--muted)">東・地平線</text>
+          <text x="200" y="52" text-anchor="middle" font-size="14" font-weight="700" fill="var(--muted)">天頂（正上方）</text>
+          <g id="domehandle" class="angle-handle">
+            <circle r="22" fill="var(--sun)" stroke="var(--card)" stroke-width="3"></circle>
+            <text y="6" text-anchor="middle" font-size="18">☉</text>
+          </g>
+        </svg>
+        <svg class="scene" id="protractor" viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 40 220 A 160 160 0 0 1 360 220" fill="none" stroke="var(--line)" stroke-width="18" stroke-linecap="round"></path>
+          <text x="40" y="246" text-anchor="middle" font-size="13" font-weight="700" fill="var(--muted)">東</text>
+          <g id="ticks"></g>
+          <line id="needle" x1="200" y1="220" x2="200" y2="60" stroke="var(--sky)" stroke-width="5" stroke-linecap="round"></line>
+          <circle cx="200" cy="220" r="9" fill="var(--sky)"></circle>
+          <g id="needlehandle" class="angle-handle">
+            <circle cx="200" cy="60" r="20" fill="var(--sky)" stroke="var(--card)" stroke-width="3"></circle>
+          </g>
+          <text x="200" y="248" text-anchor="middle" font-size="15" fill="var(--muted)" font-weight="700">量角器</text>
+        </svg>
+      </div>
+      <div class="readouts">
+        <div class="readout sky" style="flex:none; min-width: 220px; margin: 16px auto 0;">
+          <p class="rlabel" style="text-align:center">太陽高度角</p>
+          <p class="rvalue" id="angleVal" style="text-align:center; font-size: 32px;">45°</p>
+        </div>
+      </div>
+      <svg class="scene" id="scene2" viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg" style="margin-top:10px">
+        <rect x="0" y="200" width="900" height="60" fill="var(--ground)"></rect>
+        <line x1="0" y1="200" x2="900" y2="200" stroke="var(--ground-line)" stroke-width="3"></line>
+        <line id="ray2" x1="0" y1="0" x2="0" y2="0" stroke="var(--sun)" stroke-width="2.5" stroke-dasharray="6 6"></line>
+        <text id="rayLabel2" font-size="14" font-weight="700" fill="var(--sun)" text-anchor="middle">太陽光線</text>
+        <path id="arc2" d="" fill="none" stroke="var(--sky)" stroke-width="2.5"></path>
+        <ellipse id="shadow2" cx="480" cy="200" rx="8" ry="6" fill="var(--shadow-col)" opacity="0.85"></ellipse>
+        <g>
+          <circle cx="480" cy="150" r="13" fill="var(--ink)"></circle>
+          <rect x="472" y="163" width="16" height="37" rx="7" fill="var(--ink)"></rect>
+        </g>
+        <text x="24" y="224" font-size="16" font-weight="700" fill="var(--muted)">東</text>
+        <text x="876" y="224" font-size="16" font-weight="700" fill="var(--muted)" text-anchor="end">西</text>
+      </svg>
+      <p class="note">觀察重點：太陽在<b>東邊</b>升起，影子就落在<b>西邊</b>；太陽高度角愈接近 <b>90°</b>（正上方），影子愈短；角度愈接近 <b>0°</b>（地平線），影子愈長。</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  function svgPoint(svg, clientX, clientY) {
+    var pt = svg.createSVGPoint();
+    pt.x = clientX; pt.y = clientY;
+    var m = svg.getScreenCTM();
+    if (!m) return { x: 0, y: 0 };
+    var p = pt.matrixTransform(m.inverse());
+    return { x: p.x, y: p.y };
+  }
+
+  function makeDraggable(svg, handle, onMove) {
+    var dragging = false;
+    function start(e) {
+      dragging = true;
+      handle.setPointerCapture && e.pointerId != null && handle.setPointerCapture(e.pointerId);
+      move(e);
+      e.preventDefault();
+    }
+    function move(e) {
+      if (!dragging) return;
+      var cx = e.clientX, cy = e.clientY;
+      if (cx == null && e.touches && e.touches[0]) { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
+      var p = svgPoint(svg, cx, cy);
+      onMove(p.x, p.y);
+      e.preventDefault();
+    }
+    function end(e) { dragging = false; }
+    handle.addEventListener("pointerdown", start);
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", end);
+    handle.addEventListener("touchstart", start, { passive: false });
+    window.addEventListener("touchmove", move, { passive: false });
+    window.addEventListener("touchend", end);
+  }
+
+  // ---------- Tabs ----------
+  var tabs = [document.getElementById("tabbtn-1"), document.getElementById("tabbtn-2")];
+  var panels = [document.getElementById("panel-1"), document.getElementById("panel-2")];
+  tabs.forEach(function (btn, i) {
+    btn.addEventListener("click", function () {
+      tabs.forEach(function (b, j) {
+        b.setAttribute("aria-selected", j === i ? "true" : "false");
+        panels[j].classList.toggle("active", j === i);
+      });
+    });
+  });
+
+  // ---------- Activity 1: move the sun, see the shadow ----------
+  var GROUND_Y1 = 380, PERSON_X1 = 450, PERSON_TOP_Y1 = 316, PERSON_H1 = GROUND_Y1 - PERSON_TOP_Y1;
+  var scene1 = document.getElementById("scene1");
+  var sunHandle1 = document.getElementById("sunhandle1");
+  var shadow1 = document.getElementById("shadow1");
+  var ray1 = document.getElementById("ray1");
+  var dir1 = document.getElementById("dir1");
+  var len1 = document.getElementById("len1");
+  var sun1 = { x: 220, y: 110 };
+
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+  function updateScene1() {
+    sunHandle1.setAttribute("transform", "translate(" + sun1.x + "," + sun1.y + ")");
+    // similar triangles: light at sun1, person top at (PERSON_X1, PERSON_TOP_Y1), ground at GROUND_Y1
+    var t = (GROUND_Y1 - sun1.y) / (PERSON_TOP_Y1 - sun1.y);
+    var shadowX = sun1.x + t * (PERSON_X1 - sun1.x);
+    shadowX = clamp(shadowX, -400, 1300);
+    var len = Math.abs(shadowX - PERSON_X1);
+    var dirX = shadowX - PERSON_X1;
+
+    var rx = Math.abs(dirX) < 6 ? 10 : Math.min(90, 10 + len * 0.35);
+    shadow1.setAttribute("cx", (PERSON_X1 + shadowX) / 2);
+    shadow1.setAttribute("rx", rx);
+
+    ray1.setAttribute("x1", sun1.x); ray1.setAttribute("y1", sun1.y);
+    ray1.setAttribute("x2", shadowX); ray1.setAttribute("y2", GROUND_Y1);
+    var rayLabel1 = document.getElementById("rayLabel1");
+    rayLabel1.setAttribute("x", sun1.x + (PERSON_X1 - sun1.x) * 0.4);
+    rayLabel1.setAttribute("y", sun1.y + (PERSON_TOP_Y1 - sun1.y) * 0.4 - 10);
+
+    var units = Math.round(len / 12);
+    len1.textContent = units + " 格";
+    if (Math.abs(dirX) < 6) dir1.textContent = "正下方（中午）";
+    else dir1.textContent = dirX > 0 ? "小人的西邊" : "小人的東邊";
+  }
+
+  makeDraggable(scene1, sunHandle1, function (x, y) {
+    sun1.x = clamp(x, 20, 880);
+    sun1.y = clamp(y, 30, PERSON_TOP_Y1 - 40);
+    updateScene1();
+  });
+  document.getElementById("reset-1").addEventListener("click", function () {
+    sun1 = { x: 220, y: 110 };
+    updateScene1();
+  });
+  updateScene1();
+
+  // ---------- Activity 2: dome + protractor -> altitude angle ----------
+  var domeSvg = document.getElementById("dome");
+  var protractorSvg = document.getElementById("protractor");
+  var domeHandle = document.getElementById("domehandle");
+  var needleHandle = document.getElementById("needlehandle");
+  var needle = document.getElementById("needle");
+  var angleVal = document.getElementById("angleVal");
+  var ticksG = document.getElementById("ticks");
+
+  var DOME_CX = 200, DOME_CY = 240, DOME_R = 170;
+  var PROT_CX = 200, PROT_CY = 220, PROT_R = 160;
+
+  // draw protractor tick marks 0..90
+  for (var d = 0; d <= 90; d += 10) {
+    var rad = (Math.PI / 180) * (180 - d * (180 / 90) / 2 - 0); // placeholder, replaced below
+  }
+  (function drawTicks() {
+    for (var deg = 0; deg <= 90; deg += 10) {
+      var rad = (Math.PI - (deg / 90) * Math.PI); // 0deg -> angle PI (left/right edge), 90deg -> PI/2 (top)... adjust
+    }
+  })();
+
+  // Altitude measured from the eastern horizon (left side, 0 deg) sweeping up to the zenith (top, 90 deg) —
+  // matching the sunlight-ray diagram below, where the sun always sits to the east (left) of the figure.
+  function altitudeToXY(cx, cy, r, altitudeDeg) {
+    var theta = (altitudeDeg / 180) * Math.PI; // 0..90deg altitude maps to 0..PI/2 rad sweep from horizon
+    return { x: cx - r * Math.cos(theta), y: cy - r * Math.sin(theta) };
+  }
+
+  (function drawProtractorTicks() {
+    for (var deg = 0; deg <= 90; deg += 10) {
+      var p1 = altitudeToXY(PROT_CX, PROT_CY, PROT_R - 12, deg);
+      var p2 = altitudeToXY(PROT_CX, PROT_CY, PROT_R + 4, deg);
+      var line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
+      line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
+      line.setAttribute("stroke", "var(--muted-2)");
+      line.setAttribute("stroke-width", deg % 30 === 0 ? "2.5" : "1.5");
+      ticksG.appendChild(line);
+      if (deg % 30 === 0) {
+        var lp = altitudeToXY(PROT_CX, PROT_CY, PROT_R + 20, deg);
+        var txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        txt.setAttribute("x", lp.x); txt.setAttribute("y", lp.y + 4);
+        txt.setAttribute("text-anchor", "middle");
+        txt.setAttribute("font-size", "13");
+        txt.setAttribute("fill", "var(--muted)");
+        txt.textContent = deg + "°";
+        ticksG.appendChild(txt);
+      }
+    }
+  })();
+
+  var angle = 45;
+
+  var GROUND_Y2 = 200, PERSON_X2 = 480, PERSON_TOP_Y2 = 150, PERSON_H2 = GROUND_Y2 - PERSON_TOP_Y2;
+  var ray2 = document.getElementById("ray2");
+  var arc2 = document.getElementById("arc2");
+  var shadow2 = document.getElementById("shadow2");
+
+  function updateAngleUI() {
+    var a = clamp(angle, 5, 90);
+    angleVal.textContent = Math.round(a) + "°";
+
+    var domeP = altitudeToXY(DOME_CX, DOME_CY, DOME_R, a);
+    domeHandle.setAttribute("transform", "translate(" + domeP.x + "," + domeP.y + ")");
+
+    var needleP = altitudeToXY(PROT_CX, PROT_CY, PROT_R, a);
+    needle.setAttribute("x2", needleP.x); needle.setAttribute("y2", needleP.y);
+    needleHandle.setAttribute("transform", "translate(" + (needleP.x - 200) + "," + (needleP.y - 60) + ")");
+
+    var rad = (a / 180) * Math.PI;
+    var shadowLen = PERSON_H2 / Math.tan(rad);
+    shadowLen = clamp(shadowLen, 0, 700);
+    // shadow falls on the opposite side of the person from the sun (sun is up-left, so shadow is to the right / west)
+    var shadowX = PERSON_X2 + shadowLen;
+
+    var sunX = PERSON_X2 - Math.cos(rad) * 380;
+    var sunY = PERSON_TOP_Y2 - Math.sin(rad) * 380;
+    ray2.setAttribute("x1", sunX); ray2.setAttribute("y1", sunY);
+    ray2.setAttribute("x2", shadowX); ray2.setAttribute("y2", GROUND_Y2);
+    var rayLabel2 = document.getElementById("rayLabel2");
+    rayLabel2.setAttribute("x", sunX + (PERSON_X2 - sunX) * 0.32);
+    rayLabel2.setAttribute("y", sunY + (PERSON_TOP_Y2 - sunY) * 0.32 - 10);
+
+    shadow2.setAttribute("cx", (PERSON_X2 + shadowX) / 2);
+    shadow2.setAttribute("rx", Math.min(90, 8 + shadowLen * 0.25));
+
+    var arcR = 46;
+    var startPt = { x: shadowX - arcR, y: GROUND_Y2 };
+    var endPt = { x: shadowX - arcR * Math.cos(rad), y: GROUND_Y2 - arcR * Math.sin(rad) };
+    arc2.setAttribute("d", "M " + startPt.x + " " + startPt.y + " A " + arcR + " " + arcR + " 0 0 0 " + endPt.x + " " + endPt.y);
+  }
+
+  function angleFromPoint(cx, cy, x, y) {
+    var dx = cx - x, dy = cy - y;
+    var deg = Math.atan2(dy, dx) * 180 / Math.PI;
+    return clamp(deg, 2, 90);
+  }
+
+  makeDraggable(domeSvg, domeHandle, function (x, y) {
+    angle = angleFromPoint(DOME_CX, DOME_CY, x, y);
+    updateAngleUI();
+  });
+  makeDraggable(protractorSvg, needleHandle, function (x, y) {
+    angle = angleFromPoint(PROT_CX, PROT_CY, x, y);
+    updateAngleUI();
+  });
+  document.getElementById("reset-2").addEventListener("click", function () {
+    angle = 45;
+    updateAngleUI();
+  });
+  updateAngleUI();
+})();
+</script>

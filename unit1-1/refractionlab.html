@@ -1,0 +1,505 @@
+<title>光的折射實驗室</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+  :root {
+    --bg: #FAFAF7;
+    --ink: #21262E;
+    --muted: #6B7280;
+    --muted-2: #9CA3AF;
+    --card: #FFFFFF;
+    --line: #E8E6E0;
+    --sun: #E07B39;
+    --sun-soft: #FBEFE0;
+    --sky: #3D8FE0;
+    --sky-soft: #E8F2FC;
+    --water: #2E9BD6;
+    --water-bg: #CFE8F5;
+    --water-deep: #A9D4EC;
+    --ground: #B7C4A8;
+    --ground-line: #8FA07C;
+    --ray: #E07B39;
+    --ray-2: #2E9BD6;
+    --focus: #3D8FE0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16181C;
+      --ink: #F1F0EC;
+      --muted: #A6ACB6;
+      --muted-2: #7B818C;
+      --card: #1E2126;
+      --line: #2B2F36;
+      --sun: #F0985A;
+      --sun-soft: #3A2C1E;
+      --sky: #6BA9EE;
+      --sky-soft: #1D2A38;
+      --water: #4FA9D8;
+      --water-bg: #17303D;
+      --water-deep: #0F2530;
+      --ground: #3A4632;
+      --ground-line: #566246;
+      --ray: #F0985A;
+      --ray-2: #6BA9EE;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16181C;
+    --ink: #F1F0EC;
+    --muted: #A6ACB6;
+    --muted-2: #7B818C;
+    --card: #1E2126;
+    --line: #2B2F36;
+    --sun: #F0985A;
+    --sun-soft: #3A2C1E;
+    --sky: #6BA9EE;
+    --sky-soft: #1D2A38;
+    --water: #4FA9D8;
+    --water-bg: #17303D;
+    --water-deep: #0F2530;
+    --ground: #3A4632;
+    --ground-line: #566246;
+    --ray: #F0985A;
+    --ray-2: #6BA9EE;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 28px 20px 60px; }
+  header.top { text-align: center; margin-bottom: 22px; }
+  .eyebrow { font-size: 14px; font-weight: 700; letter-spacing: 0.08em; color: var(--muted-2); margin: 0 0 6px; }
+  h1 { font-size: clamp(26px, 4vw, 34px); font-weight: 900; margin: 0 0 8px; text-wrap: balance; }
+  .lede { font-size: 16px; color: var(--muted); margin: 0; max-width: 560px; margin-inline: auto; line-height: 1.6; }
+
+  .tabs { display: flex; gap: 10px; justify-content: center; margin: 24px 0 20px; flex-wrap: wrap; }
+  .tab-btn {
+    appearance: none; border: 1.5px solid var(--line); background: var(--card); color: var(--ink);
+    font: inherit; font-weight: 700; font-size: 16px; padding: 14px 22px; border-radius: 999px;
+    cursor: pointer; display: flex; align-items: center; gap: 8px; min-height: 48px;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .tab-btn .num { width: 24px; height: 24px; border-radius: 50%; background: var(--line); color: var(--muted); font-size: 13px; display: flex; align-items: center; justify-content: center; flex: none; }
+  .tab-btn[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  .tab-btn[aria-selected="true"] .num { background: var(--bg); color: var(--ink); }
+  .tab-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .stage-card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+    padding: 20px; box-shadow: 0 1px 3px rgba(20,20,20,0.05);
+  }
+  .stage-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
+  .stage-title { font-size: 19px; font-weight: 800; margin: 0 0 4px; }
+  .stage-instr { font-size: 15px; color: var(--muted); margin: 0; max-width: 520px; line-height: 1.6; }
+  .reset-btn {
+    appearance: none; border: 1.5px solid var(--line); background: transparent; color: var(--ink);
+    font: inherit; font-weight: 700; font-size: 14px; padding: 10px 16px; border-radius: 10px;
+    cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 6px;
+  }
+  .reset-btn:hover { border-color: var(--sky); color: var(--sky); }
+  .reset-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+  svg.scene { width: 100%; height: auto; display: block; touch-action: none; user-select: none; }
+  .drag-handle { cursor: grab; touch-action: none; }
+  .drag-handle:active { cursor: grabbing; }
+
+  .readouts { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+  .readout {
+    flex: 1; min-width: 140px; background: var(--sun-soft); border-radius: 14px; padding: 14px 18px;
+  }
+  .readout.sky { background: var(--sky-soft); }
+  .readout .rlabel { font-size: 13px; font-weight: 700; color: var(--muted); margin: 0 0 2px; }
+  .readout .rvalue { font-size: 24px; font-weight: 900; font-variant-numeric: tabular-nums; margin: 0; }
+  .readout.sun .rvalue { color: var(--sun); }
+  .readout.sky .rvalue { color: var(--sky); }
+
+  .note {
+    margin-top: 16px; font-size: 14.5px; color: var(--muted); background: var(--water-bg);
+    border-radius: 12px; padding: 12px 16px; line-height: 1.6;
+  }
+  .note b { color: var(--ink); }
+  .note.flash { background: var(--sun-soft); }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; font-size: 13.5px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { display: inline-block; width: 20px; height: 0; border-top: 3px solid; border-radius: 2px; }
+  .legend i.dashed { border-top-style: dashed; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">太陽與光・動手玩</p>
+    <h1>光的折射實驗室</h1>
+    <p class="lede">用手指拖拖看，親眼觀察光線斜斜穿過水面時如何偏折，還有為什麼水裡的東西看起來會變淺、變近。</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="選擇活動">
+    <button class="tab-btn" id="tabbtn-1" role="tab" aria-selected="true" aria-controls="panel-1">
+      <span class="num">1</span> 拖拖光線，看它怎麼偏折
+    </button>
+    <button class="tab-btn" id="tabbtn-2" role="tab" aria-selected="false" aria-controls="panel-2">
+      <span class="num">2</span> 水裡的東西為什麼變淺了
+    </button>
+  </div>
+
+  <section class="panel active" id="panel-1" role="tabpanel" aria-labelledby="tabbtn-1">
+    <div class="stage-card">
+      <div class="stage-head">
+        <div>
+          <p class="stage-title">拖曳光源，觀察光線進入水中的路徑</p>
+          <p class="stage-instr">拖動上方的太陽光源 ☀️，光線會斜斜地射向水面。留意「入射角」與「折射角」的大小關係，以及光線在水面發生偏折的樣子。</p>
+        </div>
+        <button class="reset-btn" id="reset-1" type="button">重設</button>
+      </div>
+      <svg class="scene" id="scene1" viewBox="0 0 900 480" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="900" height="230" fill="var(--sky-soft)"></rect>
+        <rect x="0" y="230" width="900" height="250" fill="var(--water-bg)"></rect>
+        <rect x="0" y="380" width="900" height="100" fill="var(--water-deep)" opacity="0.6"></rect>
+        <line x1="0" y1="230" x2="900" y2="230" stroke="var(--water)" stroke-width="3"></line>
+        <text x="16" y="24" font-size="14" font-weight="700" fill="var(--muted)">空氣</text>
+        <text x="16" y="454" font-size="14" font-weight="700" fill="var(--muted)">水</text>
+
+        <line x1="450" y1="110" x2="450" y2="400" stroke="var(--muted-2)" stroke-width="2" stroke-dasharray="5 6"></line>
+        <text x="450" y="98" text-anchor="middle" font-size="13" font-weight="700" fill="var(--muted)">法線</text>
+
+        <line id="straightRay1" x1="450" y1="230" x2="450" y2="230" stroke="var(--muted-2)" stroke-width="2" stroke-dasharray="4 5" opacity="0.85"></line>
+        <path id="incArc1" fill="none" stroke="var(--ray)" stroke-width="2"></path>
+        <path id="refArc1" fill="none" stroke="var(--ray-2)" stroke-width="2"></path>
+        <text id="incArcLabel1" font-size="13" font-weight="800" fill="var(--ray)" text-anchor="middle"></text>
+        <text id="refArcLabel1" font-size="13" font-weight="800" fill="var(--ray-2)" text-anchor="middle"></text>
+
+        <line id="incRay1" x1="0" y1="0" x2="450" y2="230" stroke="var(--ray)" stroke-width="3.5" stroke-linecap="round"></line>
+        <line id="refRay1" x1="450" y1="230" x2="450" y2="400" stroke="var(--ray-2)" stroke-width="3.5" stroke-linecap="round"></line>
+        <circle cx="450" cy="230" r="4.5" fill="var(--ink)"></circle>
+
+        <g id="lighthandle1" class="drag-handle">
+          <circle r="26" fill="var(--sun)" stroke="var(--card)" stroke-width="4"></circle>
+          <text y="7" text-anchor="middle" font-size="22">☀️</text>
+        </g>
+      </svg>
+      <div class="readouts">
+        <div class="readout sun">
+          <p class="rlabel">入射角（空氣中）</p>
+          <p class="rvalue" id="ang1val">0°</p>
+        </div>
+        <div class="readout sky">
+          <p class="rlabel">折射角（水中）</p>
+          <p class="rvalue" id="ang2val">0°</p>
+        </div>
+      </div>
+      <div class="legend">
+        <span><i style="border-color: var(--ray)"></i> 入射光線（空氣中）</span>
+        <span><i style="border-color: var(--ray-2)"></i> 折射光線（水中，偏向法線）</span>
+        <span><i class="dashed" style="border-color: var(--muted-2)"></i> 如果不偏折，光原本會走的路線</span>
+      </div>
+      <p class="note" id="note1">觀察重點：光由空氣斜斜地射入水中時，會<b>偏向法線</b>（折射角比入射角小）。試著把光源拖到正上方，看看垂直入射時會發生什麼事。</p>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-2" role="tabpanel" aria-labelledby="tabbtn-2">
+    <div class="stage-card">
+      <div class="stage-head">
+        <div>
+          <p class="stage-title">拖曳眼睛，看看水中的石頭「跑到哪裡」</p>
+          <p class="stage-instr">水裡的石頭位置其實沒有變，但光線從水中斜斜地射出水面、進入眼睛之前會偏折。你的大腦以為光是直直來的，所以石頭看起來會變淺、變近。試著把眼睛拖到不同角度看看。</p>
+        </div>
+        <button class="reset-btn" id="reset-2" type="button">重設</button>
+      </div>
+      <svg class="scene" id="scene2" viewBox="0 0 900 480" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="900" height="200" fill="var(--sky-soft)"></rect>
+        <rect x="0" y="200" width="900" height="280" fill="var(--water-bg)"></rect>
+        <rect x="0" y="400" width="900" height="80" fill="var(--ground)"></rect>
+        <line x1="0" y1="200" x2="900" y2="200" stroke="var(--water)" stroke-width="3"></line>
+        <line x1="0" y1="400" x2="900" y2="400" stroke="var(--ground-line)" stroke-width="2.5"></line>
+        <text x="16" y="24" font-size="14" font-weight="700" fill="var(--muted)">空氣</text>
+        <text x="16" y="234" font-size="14" font-weight="700" fill="var(--muted)">水</text>
+
+        <line id="normal2" x1="500" y1="130" x2="500" y2="200" stroke="var(--muted-2)" stroke-width="2" stroke-dasharray="5 6"></line>
+
+        <line id="sightExt2" x1="0" y1="0" x2="0" y2="0" stroke="var(--muted-2)" stroke-width="2" stroke-dasharray="4 5" opacity="0.9"></line>
+        <line id="underwaterRay2" x1="0" y1="0" x2="0" y2="0" stroke="var(--ray-2)" stroke-width="3.5" stroke-linecap="round"></line>
+        <line id="airRay2" x1="0" y1="0" x2="0" y2="0" stroke="var(--ray)" stroke-width="3.5" stroke-linecap="round"></line>
+
+        <g id="apparent2" opacity="0.85">
+          <circle r="20" fill="none" stroke="var(--muted-2)" stroke-width="2.5" stroke-dasharray="4 4"></circle>
+          <text y="6" text-anchor="middle" font-size="20">🪨</text>
+        </g>
+        <g id="realrock2">
+          <circle cx="500" cy="430" r="20" fill="var(--ground-line)"></circle>
+          <text x="500" y="437" text-anchor="middle" font-size="20">🪨</text>
+        </g>
+
+        <g id="eyehandle2" class="drag-handle">
+          <circle r="26" fill="var(--sky)" stroke="var(--card)" stroke-width="4"></circle>
+          <text y="7" text-anchor="middle" font-size="20">👁️</text>
+        </g>
+      </svg>
+      <div class="readouts">
+        <div class="readout sun">
+          <p class="rlabel">觀察角度（愈斜愈大）</p>
+          <p class="rvalue" id="viewAngVal">0°</p>
+        </div>
+        <div class="readout sky">
+          <p class="rlabel">看起來的深度（實際的幾成）</p>
+          <p class="rvalue" id="depthVal">100%</p>
+        </div>
+      </div>
+      <div class="legend">
+        <span><i style="border-color: var(--ray-2)"></i> 石頭反射光在水中的路徑</span>
+        <span><i style="border-color: var(--ray)"></i> 光線射出水面進入眼睛</span>
+        <span><i class="dashed" style="border-color: var(--muted-2)"></i> 大腦以為光是直線走的視線</span>
+      </div>
+      <p class="note" id="note2">觀察重點：石頭的<b>實際位置</b>（深色）沒有動，但因為光線在水面偏折，眼睛沿著<b>直直的視線</b>往回看，就會看到<b>變淺、變近</b>的「看起來的位置」（虛線輪廓）。看的角度愈斜，這個錯覺通常愈明顯。</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var N_WATER = 1.33, N_AIR = 1;
+
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function toDeg(r) { return r * 180 / Math.PI; }
+  function toRad(d) { return d * Math.PI / 180; }
+
+  function svgPoint(svg, clientX, clientY) {
+    var pt = svg.createSVGPoint();
+    pt.x = clientX; pt.y = clientY;
+    var m = svg.getScreenCTM();
+    if (!m) return { x: 0, y: 0 };
+    var p = pt.matrixTransform(m.inverse());
+    return { x: p.x, y: p.y };
+  }
+
+  function makeDraggable(svg, handle, onMove) {
+    var dragging = false;
+    function start(e) {
+      dragging = true;
+      handle.setPointerCapture && e.pointerId != null && handle.setPointerCapture(e.pointerId);
+      move(e);
+      e.preventDefault();
+    }
+    function move(e) {
+      if (!dragging) return;
+      var cx = e.clientX, cy = e.clientY;
+      if (cx == null && e.touches && e.touches[0]) { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
+      var p = svgPoint(svg, cx, cy);
+      onMove(p.x, p.y);
+      e.preventDefault();
+    }
+    function end() { dragging = false; }
+    handle.addEventListener("pointerdown", start);
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", end);
+    handle.addEventListener("touchstart", start, { passive: false });
+    window.addEventListener("touchmove", move, { passive: false });
+    window.addEventListener("touchend", end);
+  }
+
+  // ---------- Tabs ----------
+  var tabs = [document.getElementById("tabbtn-1"), document.getElementById("tabbtn-2")];
+  var panels = [document.getElementById("panel-1"), document.getElementById("panel-2")];
+  tabs.forEach(function (btn, i) {
+    btn.addEventListener("click", function () {
+      tabs.forEach(function (b, j) {
+        b.setAttribute("aria-selected", j === i ? "true" : "false");
+        panels[j].classList.toggle("active", j === i);
+      });
+    });
+  });
+
+  // ---------- Activity 1: air -> water refraction ----------
+  var scene1 = document.getElementById("scene1");
+  var lightHandle1 = document.getElementById("lighthandle1");
+  var incRay1 = document.getElementById("incRay1");
+  var refRay1 = document.getElementById("refRay1");
+  var straightRay1 = document.getElementById("straightRay1");
+  var incArc1 = document.getElementById("incArc1");
+  var refArc1 = document.getElementById("refArc1");
+  var incArcLabel1 = document.getElementById("incArcLabel1");
+  var refArcLabel1 = document.getElementById("refArcLabel1");
+  var ang1val = document.getElementById("ang1val");
+  var ang2val = document.getElementById("ang2val");
+  var note1 = document.getElementById("note1");
+
+  var P1 = { x: 450, y: 230 };
+  var light1 = { x: 620, y: 90 };
+  var DEFAULT_LIGHT1 = { x: 620, y: 90 };
+
+  function arcPath(cx, cy, r, a1deg, a2deg) {
+    // angles measured from the downward vertical (normal), sweeping toward given side
+    var lo = Math.min(a1deg, a2deg), hi = Math.max(a1deg, a2deg);
+    var p1 = { x: cx + r * Math.sin(toRad(lo)) * (a1deg < 0 || a2deg < 0 ? -1 : 1), y: cy };
+    return null; // unused placeholder
+  }
+
+  function updateScene1() {
+    lightHandle1.setAttribute("transform", "translate(" + light1.x + "," + light1.y + ")");
+    var dx = light1.x - P1.x;
+    var dy = P1.y - light1.y; // positive, light is above surface
+    var angle1 = toDeg(Math.atan2(dx, dy)); // signed angle from normal
+    var sign = angle1 < 0 ? -1 : 1;
+    var a1 = Math.abs(angle1);
+    var sinA2 = Math.min(0.999, (Math.sin(toRad(a1)) * N_AIR) / N_WATER);
+    var a2 = toDeg(Math.asin(sinA2));
+
+    incRay1.setAttribute("x1", light1.x); incRay1.setAttribute("y1", light1.y);
+    incRay1.setAttribute("x2", P1.x); incRay1.setAttribute("y2", P1.y);
+
+    // The refracted ray (and the "if it didn't bend" reference line) continue in the
+    // same direction the light was already travelling — i.e. the opposite lateral side
+    // from where the light source sits relative to P — just bent toward the normal.
+    var refSign = -sign;
+
+    var REF_LEN = 170;
+    var rx = P1.x + REF_LEN * Math.sin(toRad(a2)) * refSign;
+    var ry = P1.y + REF_LEN * Math.cos(toRad(a2));
+    refRay1.setAttribute("x1", P1.x); refRay1.setAttribute("y1", P1.y);
+    refRay1.setAttribute("x2", rx); refRay1.setAttribute("y2", ry);
+
+    var sx = P1.x + REF_LEN * Math.sin(toRad(a1)) * refSign;
+    var sy = P1.y + REF_LEN * Math.cos(toRad(a1));
+    straightRay1.setAttribute("x1", P1.x); straightRay1.setAttribute("y1", P1.y);
+    straightRay1.setAttribute("x2", sx); straightRay1.setAttribute("y2", sy);
+
+    // angle arcs
+    var R1 = 50, R2 = 40;
+    function arcD(cx, cy, r, aDeg, sign, downward) {
+      var startX = cx, startY = downward ? cy - r : cy + r;
+      var endX = cx + r * Math.sin(toRad(aDeg)) * sign;
+      var endY = downward ? cy - r * Math.cos(toRad(aDeg)) : cy + r * Math.cos(toRad(aDeg));
+      var largeArc = aDeg > 180 ? 1 : 0;
+      var sweep = (sign * (downward ? -1 : 1)) > 0 ? 1 : 0;
+      return "M " + startX + " " + startY + " A " + r + " " + r + " 0 " + largeArc + " " + sweep + " " + endX + " " + endY;
+    }
+    incArc1.setAttribute("d", arcD(P1.x, P1.y, R1, a1, sign, true));
+    refArc1.setAttribute("d", arcD(P1.x, P1.y, R2, a2, refSign, false));
+
+    var labelAngInc = a1 / 2;
+    incArcLabel1.setAttribute("x", P1.x + (R1 + 18) * Math.sin(toRad(labelAngInc)) * sign);
+    incArcLabel1.setAttribute("y", P1.y - (R1 + 18) * Math.cos(toRad(labelAngInc)) + 4);
+    incArcLabel1.textContent = Math.round(a1) + "°";
+
+    var labelAngRef = a2 / 2;
+    refArcLabel1.setAttribute("x", P1.x + (R2 + 20) * Math.sin(toRad(labelAngRef)) * refSign);
+    refArcLabel1.setAttribute("y", P1.y + (R2 + 20) * Math.cos(toRad(labelAngRef)) + 4);
+    refArcLabel1.textContent = Math.round(a2) + "°";
+
+    ang1val.textContent = Math.round(a1) + "°";
+    ang2val.textContent = Math.round(a2) + "°";
+
+    if (a1 < 3) {
+      note1.classList.add("flash");
+      note1.innerHTML = "<b>垂直入射不偏折！</b>光線垂直（角度接近 0°）射入水面時，行進路線<b>不會改變</b>，直直穿過水面。";
+    } else {
+      note1.classList.remove("flash");
+      note1.innerHTML = "觀察重點：光由空氣斜斜地射入水中時，會<b>偏向法線</b>（折射角 " + Math.round(a2) + "° 比入射角 " + Math.round(a1) + "° 小）。試著把光源拖到正上方，看看垂直入射時會發生什麼事。";
+    }
+  }
+
+  makeDraggable(scene1, lightHandle1, function (x, y) {
+    light1.x = clamp(x, 30, 870);
+    light1.y = clamp(y, 20, P1.y - 15);
+    updateScene1();
+  });
+  document.getElementById("reset-1").addEventListener("click", function () {
+    light1 = { x: DEFAULT_LIGHT1.x, y: DEFAULT_LIGHT1.y };
+    updateScene1();
+  });
+  updateScene1();
+
+  // ---------- Activity 2: apparent shallowing ----------
+  var scene2 = document.getElementById("scene2");
+  var eyeHandle2 = document.getElementById("eyehandle2");
+  var underwaterRay2 = document.getElementById("underwaterRay2");
+  var airRay2 = document.getElementById("airRay2");
+  var sightExt2 = document.getElementById("sightExt2");
+  var apparent2 = document.getElementById("apparent2");
+  var normal2 = document.getElementById("normal2");
+  var viewAngVal = document.getElementById("viewAngVal");
+  var depthVal = document.getElementById("depthVal");
+  var note2 = document.getElementById("note2");
+
+  var SURFACE_Y2 = 200;
+  var ROCK = { x: 500, y: 430 };
+  var eye2 = { x: 260, y: 90 };
+  var DEFAULT_EYE2 = { x: 260, y: 90 };
+
+  function solveRefractionPoint(rockX, rockY, eyeX, eyeY, surfaceY) {
+    // Find Px on the surface such that Snell's law holds for the path rock -> P -> eye.
+    var lo = Math.min(rockX, eyeX) - 250, hi = Math.max(rockX, eyeX) + 250;
+    function f(px) {
+      var theta1 = Math.atan2(px - rockX, rockY - surfaceY); // in water, from normal
+      var theta2 = Math.atan2(eyeX - px, surfaceY - eyeY); // in air, from normal
+      return N_WATER * Math.sin(theta1) - N_AIR * Math.sin(theta2);
+    }
+    var a = lo, b = hi, fa = f(a);
+    for (var i = 0; i < 40; i++) {
+      var mid = (a + b) / 2, fm = f(mid);
+      if ((fa < 0 && fm < 0) || (fa > 0 && fm > 0)) { a = mid; fa = fm; } else { b = mid; }
+    }
+    return (a + b) / 2;
+  }
+
+  function updateScene2() {
+    eyeHandle2.setAttribute("transform", "translate(" + eye2.x + "," + eye2.y + ")");
+
+    var px = solveRefractionPoint(ROCK.x, ROCK.y, eye2.x, eye2.y, SURFACE_Y2);
+    px = clamp(px, 20, 880);
+    var P = { x: px, y: SURFACE_Y2 };
+
+    normal2.setAttribute("x1", px); normal2.setAttribute("x2", px);
+
+    underwaterRay2.setAttribute("x1", ROCK.x); underwaterRay2.setAttribute("y1", ROCK.y);
+    underwaterRay2.setAttribute("x2", P.x); underwaterRay2.setAttribute("y2", P.y);
+
+    airRay2.setAttribute("x1", P.x); airRay2.setAttribute("y1", P.y);
+    airRay2.setAttribute("x2", eye2.x); airRay2.setAttribute("y2", eye2.y);
+
+    var theta2rad = Math.atan2(eye2.x - P.x, SURFACE_Y2 - eye2.y);
+    var theta1rad = Math.atan2(P.x - ROCK.x, ROCK.y - SURFACE_Y2);
+    var theta2 = Math.abs(toDeg(theta2rad));
+
+    // apparent position: continue the eye->P line straight, to a depth shallower than
+    // the real depth. Near straight-down viewing this is real depth / n_water; the more
+    // oblique the view, the shallower it looks (cos ratio makes the effect grow with angle).
+    var realDepth = ROCK.y - SURFACE_Y2;
+    var cosRatio = clamp(Math.cos(theta2rad) / Math.cos(theta1rad), 0.25, 1);
+    var apparentDepth = (realDepth / N_WATER) * cosRatio;
+    var dirx = P.x - eye2.x, diry = SURFACE_Y2 - eye2.y;
+    var len = Math.sqrt(dirx * dirx + diry * diry) || 1;
+    var ux = dirx / len, uy = diry / len;
+    var t = uy > 0.001 ? apparentDepth / uy : 0;
+    var A = { x: P.x + ux * t, y: SURFACE_Y2 + apparentDepth };
+
+    apparent2.setAttribute("transform", "translate(" + A.x + "," + A.y + ")");
+    sightExt2.setAttribute("x1", P.x); sightExt2.setAttribute("y1", P.y);
+    sightExt2.setAttribute("x2", A.x); sightExt2.setAttribute("y2", A.y);
+
+    viewAngVal.textContent = Math.round(theta2) + "°";
+    var pct = Math.round((apparentDepth / realDepth) * 100);
+    depthVal.textContent = pct + "%";
+
+    if (theta2 < 4) {
+      note2.classList.add("flash");
+      note2.innerHTML = "<b>幾乎從正上方往下看時</b>，偏折的角度很小，錯覺也最不明顯——但只要不是完全垂直，看起來的深度還是會比實際的淺一點。";
+    } else {
+      note2.classList.remove("flash");
+      note2.innerHTML = "觀察重點：石頭的<b>實際位置</b>（深色）沒有動，但因為光線在水面偏折，眼睛沿著<b>直直的視線</b>往回看，就會看到<b>變淺、變近</b>的「看起來的位置」（虛線輪廓，目前約是實際深度的 " + pct + "%）。";
+    }
+  }
+
+  makeDraggable(scene2, eyeHandle2, function (x, y) {
+    eye2.x = clamp(x, 30, 870);
+    eye2.y = clamp(y, 20, SURFACE_Y2 - 15);
+    updateScene2();
+  });
+  document.getElementById("reset-2").addEventListener("click", function () {
+    eye2 = { x: DEFAULT_EYE2.x, y: DEFAULT_EYE2.y };
+    updateScene2();
+  });
+  updateScene2();
+})();
+</script>

@@ -1,0 +1,538 @@
+<title>四季成因實驗室</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+  :root {
+    --bg: #FAFAF7;
+    --ink: #21262E;
+    --muted: #6B7280;
+    --muted-2: #9CA3AF;
+    --card: #FFFFFF;
+    --line: #E8E6E0;
+    --sun: #E07B39;
+    --sun-soft: #FBEFE0;
+    --sky: #3D8FE0;
+    --sky-soft: #E8F2FC;
+    --space: #EDEEF2;
+    --earth-day: #6FA8D9;
+    --earth-night: #2F3A48;
+    --ground: #B7C4A8;
+    --ground-line: #8FA07C;
+    --shadow-col: #6B7280;
+    --shadow-soft: #E4E2DA;
+    --focus: #3D8FE0;
+    --spring: #5AA26B;
+    --summer: #E07B39;
+    --autumn: #C98A2E;
+    --winter: #3D6FE0;
+    --day-fill: #FFF3DC;
+    --night-fill: #E7E9EE;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16181C; --ink: #F1F0EC; --muted: #A6ACB6; --muted-2: #7B818C;
+      --card: #1E2126; --line: #2B2F36; --sun: #F0985A; --sun-soft: #3A2C1E;
+      --sky: #6BA9EE; --sky-soft: #1D2A38; --space: #10121A;
+      --earth-day: #6FA8D9; --earth-night: #171C24;
+      --ground: #3A4632; --ground-line: #566246; --shadow-col: #9AA0AA; --shadow-soft: #2A2D33;
+      --spring: #79C48C; --summer: #F0985A; --autumn: #E0AC5C; --winter: #6E93F2;
+      --day-fill: #3A2F1C; --night-fill: #23262D;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16181C; --ink: #F1F0EC; --muted: #A6ACB6; --muted-2: #7B818C;
+    --card: #1E2126; --line: #2B2F36; --sun: #F0985A; --sun-soft: #3A2C1E;
+    --sky: #6BA9EE; --sky-soft: #1D2A38; --space: #10121A;
+    --earth-day: #6FA8D9; --earth-night: #171C24;
+    --ground: #3A4632; --ground-line: #566246; --shadow-col: #9AA0AA; --shadow-soft: #2A2D33;
+    --spring: #79C48C; --summer: #F0985A; --autumn: #E0AC5C; --winter: #6E93F2;
+    --day-fill: #3A2F1C; --night-fill: #23262D;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 60px; }
+  header.top { text-align: center; margin-bottom: 22px; }
+  .eyebrow { font-size: 14px; font-weight: 700; letter-spacing: 0.08em; color: var(--muted-2); margin: 0 0 6px; }
+  h1 { font-size: clamp(26px, 4vw, 34px); font-weight: 900; margin: 0 0 8px; text-wrap: balance; }
+  .lede { font-size: 16px; color: var(--muted); margin: 0; max-width: 640px; margin-inline: auto; line-height: 1.6; }
+
+  .stage-card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 20px; box-shadow: 0 1px 3px rgba(20,20,20,0.05); margin-top: 18px; }
+  .stage-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+  .stage-title { font-size: 19px; font-weight: 800; margin: 0 0 4px; }
+  .step-tag { display: inline-block; font-size: 12px; font-weight: 800; color: var(--sky); background: var(--sky-soft); border-radius: 999px; padding: 3px 10px; margin-bottom: 8px; letter-spacing: 0.03em; }
+  .stage-instr { font-size: 15px; color: var(--muted); margin: 0; max-width: 560px; line-height: 1.6; }
+  .reset-btn {
+    appearance: none; border: 1.5px solid var(--line); background: transparent; color: var(--ink);
+    font: inherit; font-weight: 700; font-size: 14px; padding: 10px 16px; border-radius: 10px;
+    cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 6px;
+  }
+  .reset-btn:hover { border-color: var(--sky); color: var(--sky); }
+  .reset-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+  .presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .preset-btn {
+    appearance: none; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink);
+    font: inherit; font-weight: 700; font-size: 14.5px; padding: 10px 16px; border-radius: 999px;
+    cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 8px;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .preset-btn .sw { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .preset-btn.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .preset-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+  .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 780px) { .layout { grid-template-columns: 1fr; } }
+
+  .diagram-row { display: flex; gap: 12px; align-items: stretch; margin-top: 14px; }
+  .diagram-col { flex: 1 1 260px; min-width: 220px; display: flex; flex-direction: column; }
+  .diagram-col .scene { flex: 1; }
+  .diagram-caption { text-align: center; margin: 8px 0 0; font-size: 13.5px; color: var(--muted); }
+  .diagram-caption b { color: var(--sun); font-weight: 800; }
+  @media (max-width: 700px) { .diagram-row { flex-direction: column; } }
+
+  svg.scene { width: 100%; height: auto; display: block; touch-action: none; user-select: none; }
+  .earth-handle { cursor: grab; touch-action: none; }
+  .earth-handle:active { cursor: grabbing; }
+
+  .readout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .readout { background: var(--sun-soft); border-radius: 14px; padding: 12px 16px; }
+  .readout.sky { background: var(--sky-soft); }
+  .readout.full { grid-column: 1 / -1; }
+  .rlabel { font-size: 12.5px; font-weight: 700; color: var(--muted); margin: 0 0 2px; }
+  .rvalue { font-size: 20px; font-weight: 900; margin: 0; font-variant-numeric: tabular-nums; }
+  .readout .rvalue.season { font-size: 22px; }
+  .rsub { font-size: 12px; color: var(--muted); margin: 2px 0 0; }
+
+  .arrow-chain { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 14px 0 4px; font-size: 13.5px; font-weight: 700; color: var(--muted); }
+  .arrow-chain .node { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; color: var(--ink); }
+  .arrow-chain .arrow { color: var(--muted-2); }
+
+  .note { margin-top: 16px; font-size: 14.5px; color: var(--muted); background: var(--shadow-soft); border-radius: 12px; padding: 12px 16px; line-height: 1.6; }
+  .note b { color: var(--ink); }
+
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">太陽與光・延伸探索</p>
+    <h1>四季成因實驗室</h1>
+    <p class="lede">從地球公轉、地軸傾斜，到太陽照射地球的角度與位置——一路看到日出方位、正午高度角、影子長短，是怎麼「連鎖」被決定的。</p>
+  </header>
+
+  <div class="arrow-chain">
+    <span class="node">① 地軸傾斜方向固定</span><span class="arrow">→</span>
+    <span class="node">② 太陽直射的緯度</span><span class="arrow">→</span>
+    <span class="node">③ 日出方位・正午高度角</span><span class="arrow">→</span>
+    <span class="node">④ 晝夜長短・影子長短</span>
+  </div>
+
+  <div class="stage-card">
+    <div class="stage-head">
+      <div>
+        <p class="step-tag">STEP 1</p>
+        <p class="stage-title">拖曳軌道上的地球，或點選季節</p>
+        <p class="stage-instr">地軸永遠指向同一個方向（北極星方向）。地球公轉時，北半球因此輪流「傾向」或「傾離」太陽——這決定了太陽直射地球的緯度。</p>
+      </div>
+      <button class="reset-btn" id="reset" type="button">重設</button>
+    </div>
+    <div class="presets" id="presets">
+      <button class="preset-btn" data-season="spring"><span class="sw" style="background:var(--spring)"></span>春分</button>
+      <button class="preset-btn" data-season="summer"><span class="sw" style="background:var(--summer)"></span>夏至</button>
+      <button class="preset-btn" data-season="autumn"><span class="sw" style="background:var(--autumn)"></span>秋分</button>
+      <button class="preset-btn" data-season="winter"><span class="sw" style="background:var(--winter)"></span>冬至</button>
+    </div>
+    <div class="layout">
+      <svg class="scene" id="orbit" viewBox="0 0 480 480" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="var(--sun-soft)"></stop>
+            <stop offset="100%" stop-color="var(--sun-soft)" stop-opacity="0"></stop>
+          </radialGradient>
+        </defs>
+        <rect x="0" y="0" width="480" height="480" fill="var(--space)" rx="18" opacity="0.4"></rect>
+        <circle cx="240" cy="240" r="170" fill="none" stroke="var(--line)" stroke-width="2" stroke-dasharray="3 6"></circle>
+        <circle cx="240" cy="240" r="88" fill="url(#sunGlow)"></circle>
+        <circle cx="240" cy="240" r="40" fill="var(--sun)"></circle>
+        <text x="240" y="246" text-anchor="middle" font-size="15" font-weight="800" fill="#fff">太陽</text>
+
+        <line id="axisHintLine" x1="240" y1="240" x2="240" y2="20" stroke="var(--muted-2)" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.6"></line>
+        <text id="axisHintLabel" x="240" y="14" text-anchor="middle" font-size="12" font-weight="700" fill="var(--muted)">地軸方向（固定不變）</text>
+
+        <g id="raysGroup"></g>
+
+        <g id="earthGroup" class="earth-handle">
+          <circle id="earthGlobe" r="14" fill="var(--earth-day)" stroke="var(--card)" stroke-width="2.5"></circle>
+          <path id="earthNight" d="" fill="var(--earth-night)" opacity="0.75"></path>
+          <line id="earthEquator" x1="0" y1="0" x2="0" y2="0" stroke="var(--card)" stroke-width="1.3" opacity="0.85"></line>
+          <line id="earthAxis" x1="0" y1="10" x2="0" y2="-10" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round"></line>
+          <circle id="earthPoleN" cx="0" cy="-10" r="2.3" fill="#fff" stroke="var(--ink)" stroke-width="1.3"></circle>
+          <text id="hemiNorthLabel" text-anchor="middle" font-size="10.5" font-weight="800" fill="var(--ink)">北半球</text>
+          <text id="hemiSouthLabel" text-anchor="middle" font-size="10.5" font-weight="800" fill="var(--ink)">南半球</text>
+        </g>
+      </svg>
+
+      <div>
+        <div class="readout-grid" style="margin-top:0">
+          <div class="readout full">
+            <p class="rlabel">北半球（台灣）季節</p>
+            <p class="rvalue season" id="seasonVal">－</p>
+          </div>
+          <div class="readout sky full">
+            <p class="rlabel">太陽直射緯度（太陽正對照射的地方）</p>
+            <p class="rvalue" id="subsolarVal">0°</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">觀察重點：地軸傾斜的方向<b>始終指向同一邊</b>（北極星方向），不會跟著公轉轉動。當北半球傾向太陽，太陽直射的位置就往北移；傾離太陽時，直射位置就往南移——四季的成因是<b>地軸傾斜</b>，不是地球與太陽的距離改變。</p>
+  </div>
+
+  <div class="stage-card">
+    <p class="step-tag">STEP 2</p>
+    <p class="stage-title">太陽直射位置，決定了嘉義看到的日出方位與高度角</p>
+    <p class="stage-instr">下面這個羅盤，畫出嘉義（北回歸線上）當天太陽從地平線升起、劃過天空、落下的路徑；右邊迷你影子圖裡<b style="color:var(--sun)">會移動的太陽</b>，就是同一顆太陽在正午的位置——拖動上面的地球，兩張圖會一起變化。</p>
+    <div class="readout-grid" style="margin-top:0">
+      <div class="readout sky">
+        <p class="rlabel">日出方位</p>
+        <p class="rvalue" id="riseVal" style="font-size:17px">正東</p>
+      </div>
+      <div class="readout sky">
+        <p class="rlabel">日落方位</p>
+        <p class="rvalue" id="setVal" style="font-size:17px">正西</p>
+      </div>
+      <div class="readout">
+        <p class="rlabel">嘉義正午高度角</p>
+        <p class="rvalue" id="altVal">66°</p>
+      </div>
+      <div class="readout">
+        <p class="rlabel">白天長度</p>
+        <p class="rvalue" id="dayHoursVal">12.0 小時</p>
+        <p class="rsub" id="dayLenVal">晝夜等長</p>
+      </div>
+    </div>
+    <div class="diagram-row">
+      <div class="diagram-col">
+        <svg class="scene" id="compass" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="200" cy="200" r="150" fill="none" stroke="var(--line)" stroke-width="2"></circle>
+          <path id="dayArc" d="" fill="var(--day-fill)"></path>
+          <circle cx="200" cy="200" r="150" fill="none" stroke="var(--line)" stroke-width="2"></circle>
+          <line x1="200" y1="50" x2="200" y2="350" stroke="var(--line)" stroke-width="1"></line>
+          <line x1="50" y1="200" x2="350" y2="200" stroke="var(--line)" stroke-width="1"></line>
+          <line id="neLine" x1="200" y1="200" x2="306" y2="94" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 4"></line>
+          <line id="seLine" x1="200" y1="200" x2="306" y2="306" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 4"></line>
+          <text x="200" y="34" text-anchor="middle" font-size="15" font-weight="800" fill="var(--muted)">北</text>
+          <text x="374" y="205" text-anchor="middle" font-size="15" font-weight="800" fill="var(--muted)">東</text>
+          <text x="200" y="374" text-anchor="middle" font-size="15" font-weight="800" fill="var(--muted)">南</text>
+          <text x="26" y="205" text-anchor="middle" font-size="15" font-weight="800" fill="var(--muted)">西</text>
+          <text x="298" y="80" text-anchor="middle" font-size="12" font-weight="700" fill="var(--muted-2)">東北</text>
+          <text x="298" y="326" text-anchor="middle" font-size="12" font-weight="700" fill="var(--muted-2)">東南</text>
+          <circle cx="200" cy="200" r="4" fill="var(--muted-2)"></circle>
+          <path id="sunPathArc" d="" fill="none" stroke="var(--sun)" stroke-width="2.5" stroke-dasharray="5 5"></path>
+          <g id="noonMarker">
+            <circle r="10" fill="var(--sun)" stroke="var(--card)" stroke-width="2.5"></circle>
+            <text y="4" text-anchor="middle" font-size="11" fill="#fff">☉</text>
+            <text y="-17" text-anchor="middle" font-size="12" font-weight="800" fill="var(--sun)">太陽（正午）</text>
+          </g>
+          <g id="sunriseMarker">
+            <circle r="13" fill="var(--sun)" stroke="var(--card)" stroke-width="2.5" opacity="0.55"></circle>
+            <text y="5" text-anchor="middle" font-size="13">☉</text>
+          </g>
+          <text id="sunriseLabel" font-size="13" font-weight="800" fill="var(--sun)" text-anchor="middle">日出</text>
+          <g id="sunsetMarker">
+            <circle r="11" fill="none" stroke="var(--sun)" stroke-width="2.5"></circle>
+          </g>
+          <text id="sunsetLabel" font-size="12" font-weight="700" fill="var(--sun)" text-anchor="middle">日落</text>
+        </svg>
+        <p class="diagram-caption">羅盤：太陽一整天劃過的路徑</p>
+      </div>
+      <div class="diagram-col">
+        <svg class="scene" id="miniShadow" viewBox="0 0 300 170" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="130" width="300" height="40" fill="var(--ground)"></rect>
+          <line x1="0" y1="130" x2="300" y2="130" stroke="var(--ground-line)" stroke-width="2.5"></line>
+          <line id="miniRay" x1="0" y1="0" x2="0" y2="0" stroke="var(--sun)" stroke-width="2.5" stroke-dasharray="5 5"></line>
+          <path id="miniArc" d="" fill="none" stroke="var(--sky)" stroke-width="2"></path>
+          <ellipse id="miniShadowEllipse" cx="170" cy="130" rx="6" ry="5" fill="var(--shadow-col)" opacity="0.85"></ellipse>
+          <g>
+            <circle cx="170" cy="100" r="9" fill="var(--ink)"></circle>
+            <rect x="164" y="109" width="12" height="26" rx="5" fill="var(--ink)"></rect>
+          </g>
+          <g id="miniSunGroup">
+            <circle id="miniSun" r="12" fill="var(--sun)" stroke="var(--card)" stroke-width="2.5"></circle>
+            <text y="4" text-anchor="middle" font-size="12" fill="#fff">☉</text>
+          </g>
+        </svg>
+        <p class="diagram-caption">正午的太陽——影子約為身高的 <b id="shadowRatioVal">1.1</b> 倍</p>
+      </div>
+    </div>
+    <p class="note">觀察重點：太陽直射的緯度愈接近北回歸線（嘉義所在緯度），日出就愈偏北、正午愈接近正頭頂、白天也愈長；直射緯度愈往南（南回歸線），日出就愈偏南、正午愈低、白天愈短。跟「一日中的變化」學到的一樣：<b>太陽高度角愈大，影子愈短</b>——所以拖到夏至時，右邊的影子會縮到最短。</p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function toRad(d) { return (d / 180) * Math.PI; }
+  function toDeg(r) { return (r * 180) / Math.PI; }
+
+  function svgPoint(svg, clientX, clientY) {
+    var pt = svg.createSVGPoint();
+    pt.x = clientX; pt.y = clientY;
+    var m = svg.getScreenCTM();
+    if (!m) return { x: 0, y: 0 };
+    return pt.matrixTransform(m.inverse());
+  }
+  function makeDraggable(svg, handle, onMove) {
+    var dragging = false;
+    function start(e) { dragging = true; move(e); e.preventDefault(); }
+    function move(e) {
+      if (!dragging) return;
+      var cx = e.clientX, cy = e.clientY;
+      if (cx == null && e.touches && e.touches[0]) { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
+      var p = svgPoint(svg, cx, cy);
+      onMove(p.x, p.y);
+      e.preventDefault();
+    }
+    function end() { dragging = false; }
+    handle.addEventListener("pointerdown", start);
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", end);
+    handle.addEventListener("touchstart", start, { passive: false });
+    window.addEventListener("touchmove", move, { passive: false });
+    window.addEventListener("touchend", end);
+  }
+
+  // ---------------- Orbit (Step 1): fixed-direction axial tilt -> subsolar latitude ----------------
+  var CX = 240, CY = 240, R = 170;
+  var TILT = 23.5;
+  var tiltRad = toRad(TILT);
+  var tiltDir = { x: Math.sin(tiltRad), y: -Math.cos(tiltRad) };
+  var EARTH_R = 14;
+
+  var orbitSvg = document.getElementById("orbit");
+  var earthGroup = document.getElementById("earthGroup");
+  var earthAxis = document.getElementById("earthAxis");
+  var earthPoleN = document.getElementById("earthPoleN");
+  var earthNight = document.getElementById("earthNight");
+  var earthEquator = document.getElementById("earthEquator");
+  var hemiNorthLabel = document.getElementById("hemiNorthLabel");
+  var hemiSouthLabel = document.getElementById("hemiSouthLabel");
+
+  // The axis direction never rotates, so the equator (perpendicular to the axis)
+  // and the N/S hemisphere labels sit at fixed local coordinates inside earthGroup.
+  (function setupHemisphereMarkers() {
+    var perpAxis = { x: -tiltDir.y, y: tiltDir.x };
+    var ex = perpAxis.x * EARTH_R, ey = perpAxis.y * EARTH_R;
+    earthEquator.setAttribute("x1", -ex); earthEquator.setAttribute("y1", -ey);
+    earthEquator.setAttribute("x2", ex); earthEquator.setAttribute("y2", ey);
+    var labelR = EARTH_R + 15;
+    hemiNorthLabel.setAttribute("x", tiltDir.x * labelR);
+    hemiNorthLabel.setAttribute("y", tiltDir.y * labelR + 4);
+    hemiSouthLabel.setAttribute("x", -tiltDir.x * labelR);
+    hemiSouthLabel.setAttribute("y", -tiltDir.y * labelR + 4);
+  })();
+
+  var seasonVal = document.getElementById("seasonVal");
+  var subsolarVal = document.getElementById("subsolarVal");
+  var altVal = document.getElementById("altVal");
+  var riseVal = document.getElementById("riseVal");
+  var setVal = document.getElementById("setVal");
+  var dayHoursVal = document.getElementById("dayHoursVal");
+  var dayLenVal = document.getElementById("dayLenVal");
+
+  var CHIAYI_LAT = 23.5;
+  var phi = 203.5; // orbital angle in degrees; cosAngle = -cos(phi - TILT)
+
+  var SEASON_ANGLES = { winter: 23.5, spring: 113.5, summer: 203.5, autumn: 293.5 };
+  var SEASON_NAMES = { winter: "冬至", spring: "春分", summer: "夏至", autumn: "秋分" };
+  var SEASON_COLORS = { winter: "var(--winter)", spring: "var(--spring)", summer: "var(--summer)", autumn: "var(--autumn)" };
+  var SEASON_ORDER = ["winter", "spring", "summer", "autumn"];
+
+  function circularDiff(a, b) {
+    var d = Math.abs(a - b) % 360;
+    return d > 180 ? 360 - d : d;
+  }
+  function nearestSeason(p) {
+    var best = "winter", bestDiff = 999;
+    SEASON_ORDER.forEach(function (s) {
+      var diff = circularDiff(p, SEASON_ANGLES[s]);
+      if (diff < bestDiff) { bestDiff = diff; best = s; }
+    });
+    return best;
+  }
+
+  var presetBtns = Array.prototype.slice.call(document.querySelectorAll(".preset-btn"));
+  presetBtns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      phi = SEASON_ANGLES[btn.getAttribute("data-season")];
+      update();
+    });
+  });
+  document.getElementById("reset").addEventListener("click", function () {
+    phi = 203.5;
+    update();
+  });
+
+  // ---------------- Step 2: subsolar latitude (declination) -> sunrise azimuth, noon altitude, day length ----------------
+  // Standard solar-position formulas at local latitude phiLat, given declination dec (all degrees):
+  //   noon altitude   = 90 - |phiLat - dec|
+  //   sunrise azimuth (from North, clockwise; 90 = due east): cos(Az) = sin(dec) / cos(phiLat)
+  //   sunset azimuth  = 360 - sunrise azimuth
+  //   day length (hrs) = 2 * H0 / 15, where cos(H0) = -tan(phiLat) * tan(dec)
+  function sunriseAzimuth(latDeg, decDeg) {
+    var cosAz = Math.sin(toRad(decDeg)) / Math.cos(toRad(latDeg));
+    cosAz = clamp(cosAz, -1, 1);
+    return toDeg(Math.acos(cosAz)); // 0..180 from North
+  }
+  function dayLengthHours(latDeg, decDeg) {
+    var cosH0 = -Math.tan(toRad(latDeg)) * Math.tan(toRad(decDeg));
+    cosH0 = clamp(cosH0, -1, 1);
+    var H0 = toDeg(Math.acos(cosH0));
+    return (2 * H0) / 15;
+  }
+  // point on compass circle for azimuth Az (0=N,90=E,180=S,270=W), radius r, center c
+  function azToXY(cx, cy, r, azDeg) {
+    var rad = toRad(azDeg);
+    return { x: cx + r * Math.sin(rad), y: cy - r * Math.cos(rad) };
+  }
+
+  var compassSvg = document.getElementById("compass");
+  var CCX = 200, CCY = 200, CR = 150;
+  var dayArc = document.getElementById("dayArc");
+  var sunPathArc = document.getElementById("sunPathArc");
+  var sunriseMarker = document.getElementById("sunriseMarker");
+  var sunsetMarker = document.getElementById("sunsetMarker");
+  var noonMarker = document.getElementById("noonMarker");
+  var sunriseLabel = document.getElementById("sunriseLabel");
+  var sunsetLabel = document.getElementById("sunsetLabel");
+
+  function azimuthLabel(az) {
+    if (az < 75) return "東偏北";
+    if (az > 105) return "東偏南";
+    return "正東";
+  }
+  function azimuthLabelSet(az) {
+    if (az > 285) return "西偏北";
+    if (az < 255) return "西偏南";
+    return "正西";
+  }
+
+  function updateCompass(subsolarLat) {
+    var riseAz = sunriseAzimuth(CHIAYI_LAT, subsolarLat);
+    var setAz = 360 - riseAz;
+    var noonAlt = 90 - Math.abs(CHIAYI_LAT - subsolarLat);
+    var hours = dayLengthHours(CHIAYI_LAT, subsolarLat);
+
+    var riseP = azToXY(CCX, CCY, CR, riseAz);
+    var setP = azToXY(CCX, CCY, CR, setAz);
+    var southP = azToXY(CCX, CCY, CR, 180);
+
+    dayArc.setAttribute("d", "M " + CCX + " " + CCY + " L " + riseP.x + " " + riseP.y +
+      " A " + CR + " " + CR + " 0 0 1 " + setP.x + " " + setP.y + " Z");
+
+    // sun path: rises at riseAz, arcs up (radius shrinks toward center to hint altitude) through south, down to setAz
+    var midP = azToXY(CCX, CCY, CR * (1 - noonAlt / 140), 180);
+    sunPathArc.setAttribute("d", "M " + riseP.x + " " + riseP.y +
+      " Q " + midP.x + " " + midP.y + " " + setP.x + " " + setP.y);
+
+    sunriseMarker.setAttribute("transform", "translate(" + riseP.x + "," + riseP.y + ")");
+    var riseLabelP = azToXY(CCX, CCY, CR + 26, riseAz);
+    sunriseLabel.setAttribute("x", riseLabelP.x); sunriseLabel.setAttribute("y", riseLabelP.y + 5);
+
+    sunsetMarker.setAttribute("transform", "translate(" + setP.x + "," + setP.y + ")");
+    var setLabelP = azToXY(CCX, CCY, CR + 26, setAz);
+    sunsetLabel.setAttribute("x", setLabelP.x); sunsetLabel.setAttribute("y", setLabelP.y + 5);
+
+    noonMarker.setAttribute("transform", "translate(" + midP.x + "," + midP.y + ")");
+
+    riseVal.textContent = azimuthLabel(riseAz);
+    setVal.textContent = azimuthLabelSet(setAz);
+    altVal.textContent = Math.round(noonAlt) + "°";
+    dayHoursVal.textContent = hours.toFixed(1) + " 小時";
+    dayLenVal.textContent = hours > 12.2 ? "晝長夜短" : (hours < 11.8 ? "晝短夜長" : "晝夜等長");
+
+    updateMiniShadow(noonAlt);
+  }
+
+  var GROUND_Y = 130, PX = 170, TOP_Y = 100, H = GROUND_Y - TOP_Y;
+  var miniRay = document.getElementById("miniRay");
+  var miniArc = document.getElementById("miniArc");
+  var miniShadowEllipse = document.getElementById("miniShadowEllipse");
+  var miniSunGroup = document.getElementById("miniSunGroup");
+  var shadowRatioVal = document.getElementById("shadowRatioVal");
+  var SUN_R = 95; // kept inside the 300x170 viewBox at every altitude from 20-90 deg
+
+  function updateMiniShadow(altitude) {
+    var a = clamp(altitude, 20, 90);
+    var rad = toRad(a);
+    var shadowLen = H / Math.tan(rad);
+    shadowLen = clamp(shadowLen, 0, 220);
+    var shadowX = PX + shadowLen;
+
+    var sunX = PX - Math.cos(rad) * SUN_R;
+    var sunY = TOP_Y - Math.sin(rad) * SUN_R;
+    miniRay.setAttribute("x1", sunX); miniRay.setAttribute("y1", sunY);
+    miniRay.setAttribute("x2", shadowX); miniRay.setAttribute("y2", GROUND_Y);
+    miniSunGroup.setAttribute("transform", "translate(" + sunX + "," + sunY + ")");
+
+    shadowRatioVal.textContent = (shadowLen / H).toFixed(1);
+
+    miniShadowEllipse.setAttribute("cx", (PX + shadowX) / 2);
+    miniShadowEllipse.setAttribute("rx", Math.min(45, 5 + shadowLen * 0.22));
+
+    var arcR = 24;
+    var startPt = { x: shadowX - arcR, y: GROUND_Y };
+    var endPt = { x: shadowX - arcR * Math.cos(rad), y: GROUND_Y - arcR * Math.sin(rad) };
+    miniArc.setAttribute("d", "M " + startPt.x + " " + startPt.y + " A " + arcR + " " + arcR + " 0 0 0 " + endPt.x + " " + endPt.y);
+  }
+
+  function update() {
+    var rad = toRad(phi);
+    var ex = CX + R * Math.sin(rad);
+    var ey = CY - R * Math.cos(rad);
+    earthGroup.setAttribute("transform", "translate(" + ex + "," + ey + ")");
+
+    var toSun = { x: (CX - ex), y: (CY - ey) };
+    var len = Math.sqrt(toSun.x * toSun.x + toSun.y * toSun.y) || 1;
+    toSun.x /= len; toSun.y /= len;
+
+    var cosAngle = tiltDir.x * toSun.x + tiltDir.y * toSun.y;
+    cosAngle = clamp(cosAngle, -1, 1);
+
+    var ax = tiltDir.x * 10, ay = tiltDir.y * 10;
+    earthAxis.setAttribute("x1", -ax); earthAxis.setAttribute("y1", -ay);
+    earthAxis.setAttribute("x2", ax); earthAxis.setAttribute("y2", ay);
+    earthPoleN.setAttribute("cx", ax); earthPoleN.setAttribute("cy", ay);
+
+    var perp = { x: -toSun.y, y: toSun.x };
+    var r = EARTH_R;
+    var p1 = { x: perp.x * r, y: perp.y * r };
+    var p2 = { x: -perp.x * r, y: -perp.y * r };
+    earthNight.setAttribute("d", "M " + p1.x + " " + p1.y + " A " + r + " " + r + " 0 0 " + (toSun.x * perp.y - toSun.y * perp.x > 0 ? 1 : 0) + " " + p2.x + " " + p2.y + " Z");
+
+    var season = nearestSeason(phi);
+    var subsolarLat = 23.5 * cosAngle;
+
+    seasonVal.textContent = SEASON_NAMES[season] + "附近（北半球）";
+    seasonVal.style.color = SEASON_COLORS[season];
+    subsolarVal.textContent = Math.abs(subsolarLat) < 0.3 ? "赤道（0°）" : (subsolarLat >= 0 ? "北緯 " : "南緯 ") + Math.abs(subsolarLat).toFixed(1) + "°";
+
+    presetBtns.forEach(function (btn) {
+      btn.classList.toggle("active", btn.getAttribute("data-season") === season);
+    });
+
+    updateCompass(subsolarLat);
+  }
+
+  makeDraggable(orbitSvg, earthGroup, function (x, y) {
+    var dx = x - CX, dy = y - CY;
+    var ang = toDeg(Math.atan2(dx, -dy));
+    if (ang < 0) ang += 360;
+    phi = ang;
+    update();
+  });
+
+  update();
+})();
+</script>
