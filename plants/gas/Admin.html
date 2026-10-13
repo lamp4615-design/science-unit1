@@ -1,0 +1,338 @@
+<?!= include('Style') ?>
+<style>
+.wrap{max-width:1280px;margin:0 auto;padding:16px clamp(16px,2.4vw,32px) 48px;display:grid;gap:16px}
+.gate{min-height:100vh;display:grid;place-items:center;padding:16px}
+.gate form{background:var(--panel);border:2px solid var(--line);border-radius:24px;padding:clamp(20px,4vw,40px);display:grid;gap:14px;width:min(420px,100%)}
+.gate h1{font-size:34px}
+.gate p{margin:0;color:var(--muted);font-size:15px}
+.in{font-size:20px;font-weight:700;padding:10px 14px;border-radius:12px;border:2px solid var(--line);background:var(--bg);width:100%;min-width:0}
+.head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.head h1{font-size:clamp(24px,3vw,36px);margin-right:auto}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{padding:8px 18px;border-radius:999px;border:2px solid var(--line);background:var(--panel);font-weight:700}
+.tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.clsrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.clsrow .tab.on{background:var(--leaf);border-color:var(--leaf);color:var(--leaf-ink)}
+.stat{display:flex;gap:10px;flex-wrap:wrap}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:20px;padding:clamp(14px,2vw,24px);display:grid;gap:12px;min-width:0;align-content:start}
+.card h2{font-size:clamp(18px,2vw,24px)}
+.pill{background:var(--bg);border:2px solid var(--line);border-radius:999px;padding:3px 14px;font-weight:700;white-space:nowrap}
+.pill b{font-variant-numeric:tabular-nums}
+.grid2{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:16px;align-items:start}
+@media (max-width:900px){.grid2{grid-template-columns:1fr}}
+.lane{display:grid;grid-template-columns:7em 1fr 4.5em;gap:10px;align-items:center;font-weight:700}
+.lane .nm{display:flex;gap:6px;align-items:center;white-space:nowrap}
+.lane .bar{height:30px;border-radius:999px;background:var(--line);overflow:hidden}
+.lane .bar i{display:block;height:100%;border-radius:999px;transition:width .6s}
+.lane .v{text-align:right;font-size:1.2em;font-weight:900;font-variant-numeric:tabular-nums}
+.lane small{display:block;color:var(--muted);font-weight:500;font-size:12px}
+.scroll{overflow:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:13px;color:var(--muted);letter-spacing:.04em;position:sticky;top:0;background:var(--panel)}
+td.num,th.num{text-align:right}
+.prog{display:inline-block;width:90px;height:10px;border-radius:99px;background:var(--line);overflow:hidden;vertical-align:middle;margin-right:6px}
+.prog i{display:block;height:100%;background:var(--leaf)}
+.mute{color:var(--muted)}
+.q-row{display:grid;grid-template-columns:2.4em minmax(0,1fr) 7em 4em;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.q-row .tx{min-width:0}
+.q-row .tx small{display:block;color:var(--muted)}
+.meter{height:14px;border-radius:99px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%}
+.good{background:var(--ok)} .mid{background:var(--sun)} .low{background:var(--bad)}
+.form{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));align-items:end}
+.form label{display:grid;gap:4px;font-weight:700;font-size:14px;color:var(--muted)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+textarea.in{min-height:140px;font-size:16px;font-weight:500}
+.ok{color:var(--ok);font-weight:700}.bad{color:var(--bad);font-weight:700}
+
+/* 大螢幕 */
+body.tv .head .tabs,body.tv .clsrow,body.tv .only-ctl,body.tv .tbl{display:none}
+body.tv .wrap{max-width:none;padding-top:20px}
+body.tv .grid2{grid-template-columns:1fr}
+body.tv .lane{grid-template-columns:11em 1fr 5em;font-size:clamp(22px,2.6vw,44px)}
+body.tv .lane .bar{height:clamp(34px,4vw,64px)}
+body.tv .lane small{font-size:clamp(13px,1.3vw,20px)}
+body.tv .card h2{font-size:clamp(24px,2.6vw,40px)}
+body.tv .head h1{font-size:clamp(34px,4vw,60px)}
+.tvtop{display:none}
+body.tv .tvtop{display:grid}
+.tvtop{grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:8px 24px;list-style:none;margin:0;padding:0;font-size:clamp(20px,2.2vw,36px);font-weight:700}
+.tvtop li{display:grid;grid-template-columns:1.3em 1fr auto;gap:10px;background:var(--bg);border-radius:14px;padding:6px 16px;align-items:center}
+.tvtop .p{font-weight:900;font-variant-numeric:tabular-nums}
+.tvtop li:nth-child(-n+3) .r{color:var(--petal);font-family:var(--display)}
+</style>
+
+<section class="gate" id="gate">
+  <form id="gate-form">
+    <h1>植物大考驗 後台</h1>
+    <p>密碼放在試算表的「設定」分頁，項目名稱是「後台密碼」。</p>
+    <input class="in" id="pw" type="password" autocomplete="current-password" placeholder="後台密碼" aria-label="後台密碼">
+    <div class="bad" id="gate-err"></div>
+    <button class="btn" type="submit">進入</button>
+  </form>
+</section>
+
+<div class="wrap" id="main" hidden>
+  <header class="head">
+    <h1 id="h-title">植物大考驗 戰況</h1>
+    <div class="tabs" id="tabs"></div>
+    <button class="btn ghost" id="btn-tv">大螢幕模式</button>
+    <button class="btn ghost" id="btn-tv-off" hidden>離開大螢幕</button>
+  </header>
+  <div class="clsrow only-ctl" id="clsrow"></div>
+  <div id="view"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const SK = 'plantpk-admin';
+let PW = '', D = null, tab = 'live', cls = '', timer = 0, busy = false;
+function ssGet(){try{return sessionStorage.getItem(SK)}catch(e){return null}}
+function ssSet(v){try{v?sessionStorage.setItem(SK,v):sessionStorage.removeItem(SK)}catch(e){}}
+function rpc(fn,...a){return new Promise((res,rej)=>{google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...a)})}
+function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e}
+function toast(msg){const t=el('div','toast',msg);document.body.appendChild(t);setTimeout(()=>t.remove(),2600)}
+const fmtSec = ms => ms ? (ms/1000).toFixed(1)+' 秒' : '–';
+
+/* ---------- 登入 ---------- */
+$('gate-form').onsubmit = async e => {
+  e.preventDefault();
+  const pw = $('pw').value.trim();
+  const r = await rpc('adm_check', pw).catch(()=>({error:'net'}));
+  if (r.error) { $('gate-err').textContent = r.error==='net' ? '連線失敗，請再試一次' : '密碼不對'; return; }
+  PW = pw; ssSet(pw); enter();
+};
+function enter(){ $('gate').hidden = true; $('main').hidden = false; load(); }
+function logout(){ ssSet(null); PW=''; clearTimeout(timer); $('main').hidden=true; $('gate').hidden=false; $('pw').value=''; }
+
+/* ---------- 資料 ---------- */
+async function load(){
+  if (busy) return; busy = true;
+  try {
+    const r = await rpc('adm_data', PW, cls);
+    if (r.error === 'auth') { logout(); return; }
+    D = r; cls = r.cls;
+    render();
+  } catch(e) { /* 網路暫時失敗，下次再試 */ }
+  busy = false;
+  clearTimeout(timer);
+  if (tab === 'live' || tab === 'qa') timer = setTimeout(load, 5000);
+}
+async function act(fn, ...args){
+  const r = await rpc(fn, PW, ...args);
+  if (r && r.error) { toast(r.error); return null; }
+  return r;
+}
+
+/* ---------- 版面 ---------- */
+const TABS = [['live','即時戰況'],['qa','各題分析'],['roster','名單與密碼'],['set','設定']];
+function renderChrome(){
+  const t = $('tabs'); t.innerHTML = '';
+  TABS.forEach(([k,n]) => { const b = el('button','tab'+(tab===k?' on':''),n); b.onclick = () => { tab = k; load(); }; t.appendChild(b); });
+  const r = $('clsrow'); r.innerHTML = '';
+  D.classes.forEach(c => {
+    const b = el('button','tab'+(cls===c.name?' on':''), c.name + (c.open?'（作答中）':'（未開放）'));
+    b.onclick = () => { cls = c.name; load(); }; r.appendChild(b);
+  });
+  if (D.classes.length > 1) { const b = el('button','tab'+(cls==='*'?' on':''),'兩班合併'); b.onclick = () => { cls='*'; load(); }; r.appendChild(b); }
+  const cur = D.classes.filter(c => c.name === cls)[0];
+  if (cur) {
+    const o = el('button','btn ghost', cur.open ? '暫停作答' : '開放作答');
+    o.style.marginLeft = 'auto';
+    if (!cur.open) { o.style.background = 'var(--leaf)'; o.style.color = 'var(--leaf-ink)'; o.style.borderColor = 'var(--leaf)'; }
+    o.onclick = async () => { if (await act('adm_setOpen', cls, !cur.open)) load(); };
+    r.appendChild(o);
+  }
+}
+function render(){
+  renderChrome();
+  const v = $('view'); v.innerHTML = '';
+  if (!D.classes.length && tab !== 'set') { tab = 'set'; renderChrome(); }
+  if (tab === 'live') viewLive(v);
+  else if (tab === 'qa') viewQa(v);
+  else if (tab === 'roster') viewRoster(v);
+  else viewSet(v);
+  $('h-title').textContent = '植物大考驗 ' + ({live:'戰況',qa:'各題分析',roster:'名單與密碼',set:'設定'}[tab]) + (cls && cls!=='*' ? '　' + cls : cls==='*' ? '　兩班合併' : '');
+}
+
+/* ---------- 即時戰況 ---------- */
+function viewLive(v){
+  const S = D.students;
+  const logged = S.filter(s => s.logged).length;
+  const done = S.filter(s => s.answered >= D.totalQ).length;
+  const ans = S.reduce((x,s)=>x+s.answered,0), ok = S.reduce((x,s)=>x+s.correct,0);
+  const st = el('div','stat only-ctl');
+  [['已登入',logged+' / '+S.length],['已完成',done+' 人'],['全班答對率', ans?Math.round(ok/ans*100)+'%':'–'],['更新時間',D.now]].forEach(([k,x])=>{
+    const p = el('span','pill',k+' '); p.appendChild(el('b','',x)); st.appendChild(p);
+  });
+  v.appendChild(st);
+
+  const g = el('div','grid2'); v.appendChild(g);
+  const c1 = el('section','card'); g.appendChild(c1);
+  if (cls === '*') {
+    c1.appendChild(el('h2','','兩班合併時不分組，請看右邊個人排行'));
+  } else {
+    c1.appendChild(el('h2','','各組平均分數（只算已登入的同學）'));
+    const max = Math.max(1, ...D.teams.map(t=>t.avg));
+    D.teams.slice().sort((a,b)=>b.avg-a.avg).forEach(t => {
+      const row = el('div','lane');
+      const nm = el('span','nm'); const d = el('span','dot'); d.style.background = t.color;
+      const wrap = el('span','',t.name); const sm = el('small','',t.active+'/'+t.size+' 人'); wrap.appendChild(sm);
+      nm.append(d, wrap);
+      const bar = el('div','bar'); const i = el('i'); i.style.background = t.color; i.style.width = (t.avg/max*100)+'%'; bar.appendChild(i);
+      row.append(nm, bar, el('span','v',t.avg));
+      c1.appendChild(row);
+    });
+  }
+  const c2 = el('section','card'); g.appendChild(c2);
+  c2.appendChild(el('h2','','個人排行（同分比誰花的時間少）'));
+  const top = el('ol','tvtop');
+  S.slice(0,10).forEach((s,i) => {
+    const li = el('li'); li.append(el('span','r',i+1), el('span','',(s.cls?s.cls+' ':'')+s.seat+' 號 '+s.name), el('span','p',s.points+' 分'));
+    top.appendChild(li);
+  });
+  c2.appendChild(top);
+  const w = el('div','scroll tbl'); c2.appendChild(w);
+  const t = el('table'); w.appendChild(t);
+  const hr = el('tr'); ['名次', ...(cls==='*'?['班級']:[]), '座號','姓名','組別','進度','答對','總分','平均秒數'].forEach((h,i)=>{ const th = el('th',(h==='總分'||h==='答對'||h==='平均秒數')?'num':'',h); hr.appendChild(th); });
+  t.appendChild(hr);
+  S.forEach(s => {
+    const r = el('tr', s.logged ? '' : 'mute');
+    r.appendChild(el('td','',s.rank));
+    if (cls==='*') r.appendChild(el('td','',s.cls));
+    r.appendChild(el('td','',s.seat)); r.appendChild(el('td','',s.name||'–'));
+    const tc = el('td'); if (cls!=='*') { const T = D.teams.filter(x=>x.idx===s.team)[0]; if (T) { const d = el('span','dot'); d.style.background = T.color; tc.append(d,' '+T.name); } } else tc.textContent = '–';
+    r.appendChild(tc);
+    const pc = el('td'); const pr = el('span','prog'); const pi = el('i'); pi.style.width = (D.totalQ?s.answered/D.totalQ*100:0)+'%'; pr.appendChild(pi); pc.append(pr, s.answered+'/'+D.totalQ); r.appendChild(pc);
+    r.appendChild(el('td','num',s.correct)); r.appendChild(el('td','num',s.points));
+    r.appendChild(el('td','num', s.answered ? (s.ms/s.answered/1000).toFixed(1)+' 秒' : '–'));
+    t.appendChild(r);
+  });
+  if (!S.length) c2.appendChild(el('p','mute','這個班級還沒有名單'));
+}
+
+/* ---------- 各題分析 ---------- */
+function viewQa(v){
+  const c0 = el('section','card'); v.appendChild(c0);
+  c0.appendChild(el('h2','','各單元答對率'));
+  D.topics.forEach(t => {
+    const pct = t.n ? Math.round(t.ok/t.n*100) : 0;
+    const row = el('div','q-row'); row.style.gridTemplateColumns = 'minmax(0,1fr) 12em 4em';
+    const m = el('div','meter'); const i = el('i', pct>=80?'good':pct>=60?'mid':'low'); i.style.width = pct+'%'; m.appendChild(i);
+    row.append(el('span','',t.topic), m, el('b','',t.n?pct+'%':'–'));
+    c0.appendChild(row);
+  });
+  const c = el('section','card'); v.appendChild(c);
+  c.appendChild(el('h2','','每一題答對率（最容易錯的排最上面，適合課後複習）'));
+  D.qstats.slice().sort((a,b)=>{
+    const pa = a.n ? a.ok/a.n : 2, pb = b.n ? b.ok/b.n : 2; return pa - pb || a.id - b.id;
+  }).forEach(q => {
+    const pct = q.n ? Math.round(q.ok/q.n*100) : 0;
+    const row = el('div','q-row');
+    row.appendChild(el('span','mute',q.id));
+    const tx = el('div','tx'); tx.appendChild(el('span','',q.text));
+    tx.appendChild(el('small','',q.topic + '　課本 p.' + q.page + (q.topWrong ? '　最多人選錯：「' + q.topWrong + '」（' + q.topWrongN + ' 人）' : '')));
+    row.appendChild(tx);
+    const m = el('div','meter'); const i = el('i', pct>=80?'good':pct>=60?'mid':'low'); i.style.width = pct+'%'; m.appendChild(i);
+    row.append(m, el('b','',q.n?pct+'%':'–'));
+    c.appendChild(row);
+  });
+}
+
+/* ---------- 名單 ---------- */
+function viewRoster(v){
+  if (cls === '*') { v.appendChild(el('p','mute','請先選一個班級')); return; }
+  const c = el('section','card'); v.appendChild(c);
+  c.appendChild(el('h2','','名單與登入密碼'));
+  const row = el('div','row');
+  const cp = el('button','btn ghost','複製名單與密碼');
+  cp.onclick = async () => {
+    const txt = D.students.slice().sort((a,b)=>a.seat-b.seat).map(s => [s.seat, s.name, s.pin].join('\t')).join('\n');
+    try { await navigator.clipboard.writeText('座號\t姓名\t密碼\n' + txt); toast('已複製，可貼到 Word 或試算表'); } catch(e) { toast('無法複製，請直接選取表格'); }
+  };
+  const np = el('button','btn ghost','重新產生全班密碼');
+  np.onclick = () => confirmBtn(np, '再按一次確認（舊密碼會失效）', async () => { if (await act('adm_newPins', cls)) { toast('已更新'); load(); } });
+  row.append(cp, np); c.appendChild(row);
+  const w = el('div','scroll'); c.appendChild(w);
+  const t = el('table'); w.appendChild(t);
+  const hr = el('tr'); ['座號','姓名','組別','密碼','最近登入'].forEach(h => hr.appendChild(el('th','',h))); t.appendChild(hr);
+  D.students.slice().sort((a,b)=>a.seat-b.seat).forEach(s => {
+    const r = el('tr'); const T = D.teams.filter(x=>x.idx===s.team)[0];
+    r.appendChild(el('td','',s.seat)); r.appendChild(el('td','',s.name||'–'));
+    const tc = el('td'); if (T) { const d = el('span','dot'); d.style.background = T.color; tc.append(d,' '+T.name); } r.appendChild(tc);
+    const pc = el('td'); pc.appendChild(el('b','',s.pin)); r.appendChild(pc);
+    r.appendChild(el('td','mute',s.last||'尚未登入')); t.appendChild(r);
+  });
+  const c2 = el('section','card'); v.appendChild(c2);
+  c2.appendChild(el('h2','','貼上姓名（一行一位，依座號 1、2、3…）'));
+  const ta = el('textarea','in'); ta.id = 'names'; ta.placeholder = '王小明\n李小華\n…'; ta.value = D.students.slice().sort((a,b)=>a.seat-b.seat).map(s=>s.name).join('\n');
+  c2.appendChild(ta);
+  const sv = el('button','btn','儲存姓名'); sv.style.justifySelf = 'start'; sv.style.fontSize = '18px';
+  sv.onclick = async () => { if (await act('adm_setNames', cls, ta.value.split('\n'))) { toast('姓名已儲存'); load(); } };
+  c2.appendChild(sv);
+}
+
+/* ---------- 設定 ---------- */
+function confirmBtn(btn, msg, fn){
+  if (btn.dataset.armed) { fn(); return; }
+  const old = btn.textContent; btn.dataset.armed = '1'; btn.textContent = msg; btn.classList.add('warn');
+  setTimeout(() => { delete btn.dataset.armed; btn.textContent = old; btn.classList.remove('warn'); }, 4000);
+}
+function viewSet(v){
+  const c = el('section','card'); v.appendChild(c);
+  c.appendChild(el('h2','','建立新班級'));
+  const f = el('div','form');
+  const mk = (label, id, val, type) => { const l = el('label','',label); const i = el('input','in'); i.id = id; i.value = val; i.type = type||'text'; l.appendChild(i); f.appendChild(l); return i; };
+  const n = mk('班級名稱','n-name','','text'); n.placeholder = '例如：三年甲班';
+  const cnt = mk('人數','n-count','20','number'); const tm = mk('分成幾組（最多 6）','n-teams','4','number');
+  const go = el('button','btn','建立'); go.style.fontSize = '18px';
+  go.onclick = async () => { const r = await act('adm_createClass', n.value, cnt.value, tm.value); if (r) { cls = r.cls; tab = 'roster'; toast('已建立，密碼在名單頁'); load(); } };
+  f.appendChild(go); c.appendChild(f);
+
+  const c2 = el('section','card'); v.appendChild(c2);
+  c2.appendChild(el('h2','','遊戲設定'));
+  const f2 = el('div','form');
+  const l = el('label','','每題作答秒數'); const si = el('input','in'); si.type = 'number'; si.id = 's-sec'; si.value = D.sec; l.appendChild(si); f2.appendChild(l);
+  const sb = el('button','btn ghost','儲存秒數'); sb.onclick = async () => { if (await act('adm_setSec', si.value)) { toast('已儲存'); load(); } }; f2.appendChild(sb);
+  c2.appendChild(f2);
+  const f3 = el('div','form');
+  const l3 = el('label','','新的後台密碼'); const pi = el('input','in'); pi.id = 's-pw'; pi.type = 'text'; pi.placeholder = '至少 4 個字'; l3.appendChild(pi); f3.appendChild(l3);
+  const pb = el('button','btn ghost','更改密碼'); pb.onclick = async () => { if (await act('adm_setPassword', pi.value)) { PW = pi.value.trim(); ssSet(PW); toast('密碼已更改'); pi.value=''; } }; f3.appendChild(pb);
+  c2.appendChild(f3);
+  c2.appendChild(el('p','mute','題目可以直接到試算表的「題庫」分頁修改或新增，不用改程式。'));
+
+  if (D.classes.length) {
+    const c3 = el('section','card'); v.appendChild(c3);
+    c3.appendChild(el('h2','','清除成績'));
+    c3.appendChild(el('p','mute','清除後同學可以重新作答。名單和密碼不會變。'));
+    const row = el('div','row');
+    D.classes.forEach(cl => {
+      const b = el('button','btn ghost','清除 ' + cl.name + ' 的成績');
+      b.onclick = () => confirmBtn(b, '再按一次確認清除', async () => { if (await act('adm_resetAnswers', cl.name)) { toast('已清除'); load(); } });
+      row.appendChild(b);
+    });
+    c3.appendChild(row);
+  }
+  const o = el('button','btn ghost','登出後台'); o.style.justifySelf = 'start'; o.onclick = logout; v.appendChild(o);
+}
+
+/* ---------- 大螢幕 ---------- */
+function tv(on){
+  document.body.classList.toggle('tv', on);
+  $('btn-tv').hidden = on; $('btn-tv-off').hidden = !on;
+  if (on) { tab = 'live'; load(); }
+  if (on) { try { document.documentElement.requestFullscreen().catch(()=>{}); } catch(e){} }
+  else { try { if (document.fullscreenElement) document.exitFullscreen(); } catch(e){} }
+}
+$('btn-tv').onclick = () => tv(true);
+$('btn-tv-off').onclick = () => tv(false);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('tv')) tv(false); });
+
+/* ---------- 啟動 ---------- */
+(async function(){
+  const p = ssGet();
+  if (p) { const r = await rpc('adm_check', p).catch(()=>({error:'net'})); if (!r.error) { PW = p; enter(); return; } ssSet(null); }
+  $('pw').focus();
+})();
+</script>

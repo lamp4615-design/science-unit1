@@ -3,3 +3,5 @@
 太陽的運行實驗室：影子與高度角、四季成因、光的折射。
 
 進入頁：[index.html](index.html)
+
+植物大考驗：[plants/index.html](plants/index.html)

@@ -1,0 +1,33 @@
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@500;700;900&display=swap">
+<style>
+/* 明亮的教室遊戲風：葉綠為主色，花粉紅與陽光黃做點綴。僅淺色主題。 */
+:root{
+  color-scheme:light;
+  --bg:#EEF4EC; --panel:#FFFFFF; --ink:#16301F; --muted:#557060; --line:#CFDDCF;
+  --leaf:#2E8B57; --leaf-ink:#FFFFFF; --petal:#E0457B; --sun:#F2B705;
+  --a:#D93F45; --b:#2D68D2; --c:#E7A400; --d:#24935A; --on-c:#2A1E00;
+  --ok:#1F9D55; --bad:#C8343A; --shadow:0 3px 0 rgba(22,48,31,.14);
+  --display:"Huninn","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;touch-action:manipulation}
+button:disabled{cursor:default;opacity:.5}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+[hidden]{display:none!important}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--leaf);color:var(--leaf-ink);font-family:var(--display);font-size:22px;padding:12px 30px;border-radius:999px;box-shadow:var(--shadow)}
+.btn.ghost{background:var(--panel);color:var(--ink);border:2px solid var(--line);font-family:var(--body);font-weight:700;font-size:16px;padding:9px 18px}
+.btn.warn{background:var(--bad)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 12px;border-radius:999px;font-weight:700;font-size:14px;color:#fff;background:var(--muted);white-space:nowrap}
+.dot{width:.8em;height:.8em;border-radius:50%;display:inline-block;flex:none}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 20px;border-radius:999px;font-weight:700;z-index:50;max-width:90vw}
+.net{position:fixed;top:0;left:0;right:0;background:var(--sun);color:#2A1E00;text-align:center;font-weight:700;padding:4px;z-index:60;font-size:14px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>

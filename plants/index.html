@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="國小自然科線上練習題：植物的根、莖、葉、受刺激的反應、果實與種子傳播。">
+<title>自然科考題練習</title>
+<style>
+:root{--bg:#f4f8f1;--card:#fff;--ink:#1f2d1f;--sub:#5b6b5b;--line:#d8e3d2;--main:#2e8b57;--main-d:#226a43;--ok:#2e8b57;--bad:#d93f45;--okbg:#e5f5ea;--badbg:#fdeaeb}
+@media (prefers-color-scheme:dark){:root{--bg:#121a14;--card:#1b261d;--ink:#e8f1e8;--sub:#9db09d;--line:#2d3d2f;--main:#4cbf80;--main-d:#6fd49b;--okbg:#18362411;--badbg:#3a1a1c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 "Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif}
+main{max-width:720px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:1.6rem;margin:.2em 0}
+.sub{color:var(--sub);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 18px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 14px;font:inherit;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--main);border-color:var(--main);color:#fff}
+.btn{background:var(--main);color:#fff;border:0;border-radius:12px;padding:12px 22px;font:inherit;font-weight:700;cursor:pointer}
+.btn:hover{background:var(--main-d)}
+.btn.ghost{background:transparent;color:var(--main);border:1px solid var(--main)}
+.meta{display:flex;justify-content:space-between;color:var(--sub);font-size:.9rem}
+.bar{height:6px;background:var(--line);border-radius:3px;margin:8px 0 16px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--main);transition:width .3s}
+.q{font-size:1.15rem;font-weight:700;margin:0 0 14px}
+.opt{display:block;width:100%;text-align:left;background:var(--card);color:var(--ink);border:2px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;font:inherit;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--main)}
+.opt.ok{border-color:var(--ok);background:var(--okbg)}
+.opt.bad{border-color:var(--bad);background:var(--badbg)}
+.opt b{margin-right:8px;color:var(--sub)}
+.exp{border-left:4px solid var(--main);padding:8px 14px;margin:14px 0;background:var(--okbg);border-radius:0 8px 8px 0}
+.score{font-size:3rem;font-weight:900;color:var(--main);margin:0}
+.wrong{border-top:1px solid var(--line);padding:12px 0}
+.wrong small{color:var(--sub)}
+footer{color:var(--sub);font-size:.85rem;text-align:center;margin-top:30px}
+footer a{color:var(--main)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <h1>🌱 自然科考題練習</h1>
+  <p class="sub">國小自然・植物大考驗　共 <span id="total"></span> 題，答完立刻看解說</p>
+
+  <section class="card" id="pk">
+    <strong>🏆 班級 PK 賽</strong>
+    <p class="sub" style="margin:6px 0 12px">用老師給的座號與密碼登入，和同學組隊比賽。</p>
+    <a class="btn" style="display:inline-block;text-decoration:none" href="https://script.google.com/macros/s/AKfycbwPUDAzfXpJ4mUsxx5PQJ0u74fDB7oXAHhl2bkBlnB-j_CvBTaZGTELhITW6orEgiFo/exec" target="_blank" rel="noopener">進入 PK 賽</a>
+  </section>
+
+  <section id="start" class="card">
+    <strong>選擇單元</strong>
+    <div class="chips" id="chips"></div>
+    <button class="btn" id="go">開始練習</button>
+  </section>
+
+  <section id="quiz" class="card" hidden>
+    <div class="meta"><span id="topic"></span><span id="count"></span></div>
+    <div class="bar"><i id="prog"></i></div>
+    <p class="q" id="qtext"></p>
+    <div id="opts"></div>
+    <div class="exp" id="exp" hidden></div>
+    <button class="btn" id="next" hidden>下一題</button>
+  </section>
+
+  <section id="result" class="card" hidden>
+    <p class="score"><span id="sc"></span> 分</p>
+    <p id="scdesc"></p>
+    <div id="wrongs"></div>
+    <p><button class="btn" id="again">再練一次</button> <button class="btn ghost" id="home">換單元</button></p>
+  </section>
+
+  <footer>題目來源：<a href="questions.json">questions.json</a>　·　<a href="https://github.com/lamp4615-design/science-unit1/tree/main/plants">GitHub</a></footer>
+</main>
+
+<script>
+const QUESTIONS = [{"id":1,"topic":"植物的根","page":42,"text":"植物的「根」有什麼功能？","opts":["行光合作用製造養分","固定植物體，吸收水分和礦物質","讓種子飄到遠方","吸引昆蟲來傳播花粉"],"ans":1,"exp":"根可以固定植物體，也可以吸收土壤中的水分，以及溶解在水中的礦物質。"},{"id":2,"topic":"植物的根","page":42,"text":"銀葉樹的根突出地面，像三角形的板子，這叫做什麼？","opts":["氣生根","塊根","走莖","板根"],"ans":3,"exp":"這是銀葉樹的「板根」現象，根突出地面呈現板狀三角形。"},{"id":3,"topic":"植物的根","page":42,"text":"銀葉樹長出板根，是為了適應什麼樣的環境？","opts":["乾燥的沙漠","寒冷的高山","熱帶多雨、土壤表層淺薄","很深的湖底"],"ans":2,"exp":"為了適應熱帶多雨及土壤表層淺薄的環境，板根可以增加抓地面積，讓植物體穩固生長。"},{"id":4,"topic":"植物的根","page":42,"text":"白蘿蔔的根長得特別肥大，主要用來做什麼？","opts":["儲藏養分和水分","捕捉昆蟲","吸收空氣中的溼氣","把種子彈出去"],"ans":0,"exp":"白蘿蔔為了適應乾硬的土壤環境，根部特別肥大，用來儲藏養分和水分。"},{"id":5,"topic":"植物的根","page":42,"text":"榕樹從枝條垂下來的「氣生根」，有什麼作用？","opts":["從空氣中吸附溼氣，獲得水分","製造花粉","讓葉子變紅","吸引動物來吃"],"ans":0,"exp":"榕樹為了適應乾硬土壤及強烈日照，長出氣生根從空氣中吸附溼氣獲得水分。"},{"id":6,"topic":"植物的莖","page":43,"text":"植物的「莖」有什麼功能？","opts":["捕捉昆蟲","保護種子","支撐植物體，輸送水分和養分","從土裡吸收礦物質"],"ans":2,"exp":"莖可以支撐植物體，也可以輸送水分和養分。"},{"id":7,"topic":"植物的莖","page":43,"text":"吊蘭會長出長長的「走莖」，走莖前端可以做什麼？","opts":["開出紅色的花","長出新的幼苗，繁殖下一代","捕捉小蟲","浮在水面上"],"ans":1,"exp":"吊蘭利用走莖繁殖下一代，走莖前端可以長出新的幼苗。"},{"id":8,"topic":"植物的莖","page":43,"text":"絲瓜的莖柔軟、不能直立，它怎麼往上生長？","opts":["長出板根","把葉子變成針狀","利用卷鬚攀附在其他植物上","把莖變得又短又胖"],"ans":2,"exp":"莖柔軟不能直立的植物，為了在濃密樹林裡爭取日照，會利用卷鬚或鉤刺攀附在其他植物身上向上生長，例如絲瓜。"},{"id":9,"topic":"植物的莖","page":43,"text":"我們吃的馬鈴薯，是植物的哪一個部位？","opts":["根","葉","果實","莖（塊莖）"],"ans":3,"exp":"馬鈴薯是「塊莖」，外形短而膨大，可以儲藏養分，也能長出新芽繁殖。"},{"id":10,"topic":"植物的莖","page":43,"text":"在濃密的森林裡，樟樹為什麼長出高聳挺直的莖？","opts":["為了爭取陽光","為了躲避動物","為了儲藏水分","為了讓種子浮在水上"],"ans":0,"exp":"濃密的森林中，植物為了爭取陽光，會長出高聳挺直的莖，例如樟樹。"},{"id":11,"topic":"植物的葉","page":44,"text":"植物的「葉」可以做什麼？","opts":["固定植物體","行光合作用製造養分","吸收土壤中的礦物質","把種子彈出去"],"ans":1,"exp":"葉可以行光合作用製造養分，植物體內的水分也會由葉蒸散出去。"},{"id":12,"topic":"植物的葉","page":44,"text":"聖誕紅紅紅的部分常被誤認為花瓣，它其實是什麼？","opts":["花瓣","果實","紅色的葉","莖"],"ans":2,"exp":"那是聖誕紅的紅色葉，可以吸引昆蟲幫忙傳播花粉。"},{"id":13,"topic":"植物的葉","page":44,"text":"石蓮生長在乾燥的環境中，它的葉有什麼特色？","opts":["又薄又大","肥厚，可以儲藏水分和養分","變成針狀","長滿黏黏的腺毛"],"ans":1,"exp":"石蓮肥厚的葉可以儲藏水分和養分，適應乾燥環境。"},{"id":14,"topic":"植物的葉","page":44,"text":"仙人掌的葉長成針狀，有什麼好處？","opts":["讓花朵更香","吸引昆蟲來傳粉","幫助莖往上爬","減少水分散失，也能防禦動物"],"ans":3,"exp":"仙人掌生長在乾燥環境，針狀的葉可以減少水分的散失，還能防禦動物的危害。"},{"id":15,"topic":"植物的葉","page":44,"text":"毛氈苔生長在沼澤地帶，它葉上的腺毛有什麼用途？","opts":["分泌黏液捕捉昆蟲","儲藏水分","幫助漂浮","吸收陽光變紅"],"ans":0,"exp":"毛氈苔葉上有許多腺毛，會分泌黏液捕捉昆蟲。"},{"id":16,"topic":"受刺激的反應","page":45,"text":"捕蠅草的「夾子」，是由植物的哪個部位變成的？","opts":["根","莖","葉","果實"],"ans":2,"exp":"捕蠅草的葉子長成一對夾子，葉內側有蜜汁可以吸引昆蟲。"},{"id":17,"topic":"受刺激的反應","page":45,"text":"捕蠅草什麼時候會把夾子合起來？","opts":["太陽下山的時候","昆蟲碰到葉內的感覺毛時","下雨的時候","有人在旁邊說話時"],"ans":1,"exp":"昆蟲觸碰到葉內的感覺毛，植物感覺到有異物，兩個夾子就迅速閉合；消化吸收養分後，夾子會重新張開。"},{"id":18,"topic":"受刺激的反應","page":45,"text":"輕輕碰觸含羞草，會發生什麼事？","opts":["葉子變成紅色","開出新的花","葉片閉合、葉柄下垂","莖馬上長高"],"ans":2,"exp":"含羞草被碰觸時，葉片會迅速閉合，葉柄也會下垂；一段時間後葉片又會重新張開。"},{"id":19,"topic":"受刺激的反應","page":45,"text":"含羞草為什麼會有「碰一下就合起來」的反應？","opts":["為了吸引動物來吃它","為了減少葉片被風雨摧殘和蟲子站立","為了讓種子飛得更遠","為了儲藏更多水分"],"ans":1,"exp":"含羞草生長在亞熱帶，常有猛烈的颱風或暴風，閉合可以減少葉片被摧殘和蟲子站立的地方。"},{"id":20,"topic":"受刺激的反應","page":45,"text":"種在窗戶旁的植物，莖會朝哪個方向生長？","opts":["朝向牆壁","朝向地面","朝向陽光","不會改變方向"],"ans":2,"exp":"莖會朝向陽光生長，獲得更多陽光進行光合作用。"},{"id":21,"topic":"受刺激的反應","page":45,"text":"有些植物冬天會落葉，原因是什麼？","opts":["減少養分及水分的散失，度過不良的環境","讓動物比較好吃","葉子太重撐不住","為了吸引更多昆蟲"],"ans":0,"exp":"冬天落葉可以減少養分及水分的散失，幫助植物度過不良的環境。"},{"id":22,"topic":"果實與種子傳播","page":51,"text":"植物的果實，對種子有什麼幫助？","opts":["吸收土壤中的水分","支撐植物體","捕捉昆蟲","保護種子，幫助種子傳播出去"],"ans":3,"exp":"果實可以保護種子讓它順利長大，有些果實也能幫助種子傳播出去。"},{"id":23,"topic":"果實與種子傳播","page":48,"text":"青楓的果實有薄薄的翅膀，它靠什麼方式傳播？","opts":["水力","動物力","風力","自身彈力"],"ans":2,"exp":"青楓果實具有薄翅，可以隨風飄，是「風力傳播」。"},{"id":24,"topic":"果實與種子傳播","page":48,"text":"蒲公英的果實上有蓬鬆的白色細毛，可以幫助它？","opts":["黏在動物身上","漂浮在海上","自己彈出去","隨風飄散到遠方"],"ans":3,"exp":"蓬鬆的白色細毛可以幫助蒲公英的果實隨風飄散到遠方。"},{"id":25,"topic":"果實與種子傳播","page":49,"text":"黃花酢漿草的果實成熟後，靠什麼方式傳播種子？","opts":["自身彈力","水力","風力","動物力"],"ans":0,"exp":"黃花酢漿草果實成熟後，可以把種子彈出去，是「自身彈力傳播」。"},{"id":26,"topic":"果實與種子傳播","page":49,"text":"非洲鳳仙花的果實成熟後，會發生什麼事？","opts":["長出薄薄的翅膀","果皮捲曲，把種子彈出去","長出倒鉤","浮在水面上"],"ans":1,"exp":"非洲鳳仙花果實成熟後，果皮會捲曲，用自身的力量把種子彈出去。"},{"id":27,"topic":"果實與種子傳播","page":50,"text":"雀榕的果實顏色鮮豔、氣味芳香甜美，是為了什麼？","opts":["讓風吹得更遠","在水上漂浮","嚇跑鳥類","吸引動物採食，幫忙傳播"],"ans":3,"exp":"雀榕的果實會吸引動物採食，靠「動物力」傳播。"},{"id":28,"topic":"果實與種子傳播","page":50,"text":"大花咸豐草的果實有倒鉤，它怎麼傳播種子？","opts":["靠水流漂走","靠自己彈開","靠薄翅膀飛走","鉤在動物身上，被帶到遠方"],"ans":3,"exp":"大花咸豐草果實的倒鉤可以鉤在動物身上，把種子傳到遠方。"},{"id":29,"topic":"果實與種子傳播","page":51,"text":"林投和椰子的果實能浮在水面上，是因為？","opts":["果實很重","富含纖維質，有儲藏空氣的構造","表面有黏液","長滿倒鉤"],"ans":1,"exp":"這些果實富含纖維質及儲藏空氣的構造，可以浮在水面，隨水流傳播到遠處。"},{"id":30,"topic":"果實與種子傳播","page":51,"text":"下面哪一種植物，是靠「水力」傳播？","opts":["蒲公英","大花咸豐草","椰子","黃花酢漿草"],"ans":2,"exp":"椰子可以在海上漂浮，隨海水傳播；蒲公英靠風力、大花咸豐草靠動物力、黃花酢漿草靠自身彈力。"}];
+const $ = id => document.getElementById(id);
+const L = "ABCD";
+let topic = "全部", deck = [], i = 0, right = 0, wrongs = [];
+
+const topics = ["全部", ...new Set(QUESTIONS.map(q => q.topic))];
+$("total").textContent = QUESTIONS.length;
+topics.forEach(t => {
+  const b = document.createElement("button");
+  b.className = "chip"; b.textContent = t; b.setAttribute("aria-pressed", t === topic);
+  b.onclick = () => { topic = t; [...$("chips").children].forEach(c => c.setAttribute("aria-pressed", c === b)); };
+  $("chips").appendChild(b);
+});
+
+const shuffle = a => { a = a.slice(); for (let k = a.length - 1; k > 0; k--) { const j = Math.random() * (k + 1) | 0; [a[k], a[j]] = [a[j], a[k]]; } return a; };
+const show = id => ["pk","start","quiz","result"].forEach(s => $(s).hidden = s !== id && !(s==="pk" && id==="start"));
+
+function start() {
+  deck = shuffle(QUESTIONS.filter(q => topic === "全部" || q.topic === topic));
+  i = 0; right = 0; wrongs = [];
+  show("quiz"); render();
+}
+
+function render() {
+  const q = deck[i];
+  $("topic").textContent = q.topic + "（課本第 " + q.page + " 頁）";
+  $("count").textContent = (i + 1) + " / " + deck.length;
+  $("prog").style.width = (i / deck.length * 100) + "%";
+  $("qtext").textContent = q.text;
+  $("exp").hidden = true; $("next").hidden = true;
+  $("opts").innerHTML = "";
+  const order = shuffle([0, 1, 2, 3]);
+  order.forEach((oi, pos) => {
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.innerHTML = "<b>" + L[pos] + "</b>";
+    b.append(q.opts[oi]);
+    b.onclick = () => answer(b, oi, q);
+    b.dataset.oi = oi;
+    $("opts").appendChild(b);
+  });
+}
+
+function answer(btn, oi, q) {
+  const ok = oi === q.ans;
+  [...$("opts").children].forEach(b => {
+    b.disabled = true;
+    if (+b.dataset.oi === q.ans) b.classList.add("ok");
+  });
+  if (ok) right++; else { btn.classList.add("bad"); wrongs.push({q, picked: q.opts[oi]}); }
+  $("exp").textContent = (ok ? "答對了！" : "答錯了。") + q.exp;
+  $("exp").hidden = false;
+  $("next").textContent = i + 1 < deck.length ? "下一題" : "看成績";
+  $("next").hidden = false; $("next").focus();
+}
+
+$("next").onclick = () => { if (++i < deck.length) render(); else finish(); };
+
+function finish() {
+  show("result");
+  const pct = Math.round(right / deck.length * 100);
+  $("sc").textContent = pct;
+  $("scdesc").textContent = "答對 " + right + " / " + deck.length + " 題。" + (pct === 100 ? "全對，太厲害了！" : pct >= 80 ? "很棒，繼續保持！" : "看看下面的錯題，再練一次吧！");
+  $("wrongs").innerHTML = "";
+  wrongs.forEach(w => {
+    const d = document.createElement("div"); d.className = "wrong";
+    const t = document.createElement("strong"); t.textContent = w.q.text;
+    const a = document.createElement("div"); a.textContent = "你選：" + w.picked + "　正解：" + w.q.opts[w.q.ans];
+    const e = document.createElement("small"); e.textContent = w.q.exp;
+    d.append(t, a, e); $("wrongs").appendChild(d);
+  });
+}
+
+$("go").onclick = start;
+$("again").onclick = start;
+$("home").onclick = () => show("start");
+</script>
+</body>
+</html>

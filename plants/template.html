@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="國小自然科線上練習題：植物的根、莖、葉、受刺激的反應、果實與種子傳播。">
+<title>自然科考題練習</title>
+<style>
+:root{--bg:#f4f8f1;--card:#fff;--ink:#1f2d1f;--sub:#5b6b5b;--line:#d8e3d2;--main:#2e8b57;--main-d:#226a43;--ok:#2e8b57;--bad:#d93f45;--okbg:#e5f5ea;--badbg:#fdeaeb}
+@media (prefers-color-scheme:dark){:root{--bg:#121a14;--card:#1b261d;--ink:#e8f1e8;--sub:#9db09d;--line:#2d3d2f;--main:#4cbf80;--main-d:#6fd49b;--okbg:#18362411;--badbg:#3a1a1c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 "Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif}
+main{max-width:720px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:1.6rem;margin:.2em 0}
+.sub{color:var(--sub);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 18px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 14px;font:inherit;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--main);border-color:var(--main);color:#fff}
+.btn{background:var(--main);color:#fff;border:0;border-radius:12px;padding:12px 22px;font:inherit;font-weight:700;cursor:pointer}
+.btn:hover{background:var(--main-d)}
+.btn.ghost{background:transparent;color:var(--main);border:1px solid var(--main)}
+.meta{display:flex;justify-content:space-between;color:var(--sub);font-size:.9rem}
+.bar{height:6px;background:var(--line);border-radius:3px;margin:8px 0 16px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--main);transition:width .3s}
+.q{font-size:1.15rem;font-weight:700;margin:0 0 14px}
+.opt{display:block;width:100%;text-align:left;background:var(--card);color:var(--ink);border:2px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;font:inherit;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--main)}
+.opt.ok{border-color:var(--ok);background:var(--okbg)}
+.opt.bad{border-color:var(--bad);background:var(--badbg)}
+.opt b{margin-right:8px;color:var(--sub)}
+.exp{border-left:4px solid var(--main);padding:8px 14px;margin:14px 0;background:var(--okbg);border-radius:0 8px 8px 0}
+.score{font-size:3rem;font-weight:900;color:var(--main);margin:0}
+.wrong{border-top:1px solid var(--line);padding:12px 0}
+.wrong small{color:var(--sub)}
+footer{color:var(--sub);font-size:.85rem;text-align:center;margin-top:30px}
+footer a{color:var(--main)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <h1>🌱 自然科考題練習</h1>
+  <p class="sub">國小自然・植物大考驗　共 <span id="total"></span> 題，答完立刻看解說</p>
+
+  <section class="card" id="pk">
+    <strong>🏆 班級 PK 賽</strong>
+    <p class="sub" style="margin:6px 0 12px">用老師給的座號與密碼登入，和同學組隊比賽。</p>
+    <a class="btn" style="display:inline-block;text-decoration:none" href="https://script.google.com/macros/s/AKfycbwPUDAzfXpJ4mUsxx5PQJ0u74fDB7oXAHhl2bkBlnB-j_CvBTaZGTELhITW6orEgiFo/exec" target="_blank" rel="noopener">進入 PK 賽</a>
+  </section>
+
+  <section id="start" class="card">
+    <strong>選擇單元</strong>
+    <div class="chips" id="chips"></div>
+    <button class="btn" id="go">開始練習</button>
+  </section>
+
+  <section id="quiz" class="card" hidden>
+    <div class="meta"><span id="topic"></span><span id="count"></span></div>
+    <div class="bar"><i id="prog"></i></div>
+    <p class="q" id="qtext"></p>
+    <div id="opts"></div>
+    <div class="exp" id="exp" hidden></div>
+    <button class="btn" id="next" hidden>下一題</button>
+  </section>
+
+  <section id="result" class="card" hidden>
+    <p class="score"><span id="sc"></span> 分</p>
+    <p id="scdesc"></p>
+    <div id="wrongs"></div>
+    <p><button class="btn" id="again">再練一次</button> <button class="btn ghost" id="home">換單元</button></p>
+  </section>
+
+  <footer>題目來源：<a href="questions.json">questions.json</a>　·　<a href="https://github.com/lamp4615-design/science-unit1/tree/main/plants">GitHub</a></footer>
+</main>
+
+<script>
+const QUESTIONS = /*QUESTIONS*/[];
+const $ = id => document.getElementById(id);
+const L = "ABCD";
+let topic = "全部", deck = [], i = 0, right = 0, wrongs = [];
+
+const topics = ["全部", ...new Set(QUESTIONS.map(q => q.topic))];
+$("total").textContent = QUESTIONS.length;
+topics.forEach(t => {
+  const b = document.createElement("button");
+  b.className = "chip"; b.textContent = t; b.setAttribute("aria-pressed", t === topic);
+  b.onclick = () => { topic = t; [...$("chips").children].forEach(c => c.setAttribute("aria-pressed", c === b)); };
+  $("chips").appendChild(b);
+});
+
+const shuffle = a => { a = a.slice(); for (let k = a.length - 1; k > 0; k--) { const j = Math.random() * (k + 1) | 0; [a[k], a[j]] = [a[j], a[k]]; } return a; };
+const show = id => ["pk","start","quiz","result"].forEach(s => $(s).hidden = s !== id && !(s==="pk" && id==="start"));
+
+function start() {
+  deck = shuffle(QUESTIONS.filter(q => topic === "全部" || q.topic === topic));
+  i = 0; right = 0; wrongs = [];
+  show("quiz"); render();
+}
+
+function render() {
+  const q = deck[i];
+  $("topic").textContent = q.topic + "（課本第 " + q.page + " 頁）";
+  $("count").textContent = (i + 1) + " / " + deck.length;
+  $("prog").style.width = (i / deck.length * 100) + "%";
+  $("qtext").textContent = q.text;
+  $("exp").hidden = true; $("next").hidden = true;
+  $("opts").innerHTML = "";
+  const order = shuffle([0, 1, 2, 3]);
+  order.forEach((oi, pos) => {
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.innerHTML = "<b>" + L[pos] + "</b>";
+    b.append(q.opts[oi]);
+    b.onclick = () => answer(b, oi, q);
+    b.dataset.oi = oi;
+    $("opts").appendChild(b);
+  });
+}
+
+function answer(btn, oi, q) {
+  const ok = oi === q.ans;
+  [...$("opts").children].forEach(b => {
+    b.disabled = true;
+    if (+b.dataset.oi === q.ans) b.classList.add("ok");
+  });
+  if (ok) right++; else { btn.classList.add("bad"); wrongs.push({q, picked: q.opts[oi]}); }
+  $("exp").textContent = (ok ? "答對了！" : "答錯了。") + q.exp;
+  $("exp").hidden = false;
+  $("next").textContent = i + 1 < deck.length ? "下一題" : "看成績";
+  $("next").hidden = false; $("next").focus();
+}
+
+$("next").onclick = () => { if (++i < deck.length) render(); else finish(); };
+
+function finish() {
+  show("result");
+  const pct = Math.round(right / deck.length * 100);
+  $("sc").textContent = pct;
+  $("scdesc").textContent = "答對 " + right + " / " + deck.length + " 題。" + (pct === 100 ? "全對，太厲害了！" : pct >= 80 ? "很棒，繼續保持！" : "看看下面的錯題，再練一次吧！");
+  $("wrongs").innerHTML = "";
+  wrongs.forEach(w => {
+    const d = document.createElement("div"); d.className = "wrong";
+    const t = document.createElement("strong"); t.textContent = w.q.text;
+    const a = document.createElement("div"); a.textContent = "你選：" + w.picked + "　正解：" + w.q.opts[w.q.ans];
+    const e = document.createElement("small"); e.textContent = w.q.exp;
+    d.append(t, a, e); $("wrongs").appendChild(d);
+  });
+}
+
+$("go").onclick = start;
+$("again").onclick = start;
+$("home").onclick = () => show("start");
+</script>
+</body>
+</html>

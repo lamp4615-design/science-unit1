@@ -1,0 +1,396 @@
+<?!= include('Style') ?>
+<style>
+.wrap{max-width:1100px;margin:0 auto;padding:clamp(12px,2vw,28px) clamp(16px,3vw,40px);min-height:100vh;display:flex;flex-direction:column;gap:16px}
+.brand{font-family:var(--display);font-size:clamp(28px,4vw,48px);line-height:1.2}
+.brand small{display:block;font-family:var(--body);font-size:clamp(14px,1.6vw,18px);color:var(--muted);font-weight:700;margin-top:4px}
+.step-title{font-family:var(--display);font-size:clamp(20px,2.6vw,30px);margin:6px 0 2px}
+.chips{display:flex;gap:10px;flex-wrap:wrap}
+.cls-btn{padding:14px 26px;border-radius:16px;border:3px solid var(--line);background:var(--panel);font-weight:900;font-size:clamp(20px,2.4vw,28px)}
+.cls-btn.on{border-color:var(--leaf);background:var(--leaf);color:var(--leaf-ink)}
+.seats{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:12px}
+.seat{position:relative;background:var(--panel);border:3px solid var(--line);border-radius:18px;padding:12px 8px 10px;display:grid;justify-items:center;gap:0;box-shadow:var(--shadow)}
+.seat b{font-size:clamp(30px,3.6vw,44px);font-variant-numeric:tabular-nums;line-height:1.1}
+.seat span{font-size:15px;color:var(--muted);font-weight:700;min-height:1.5em;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seat i{position:absolute;top:10px;right:10px;width:14px;height:14px;border-radius:50%}
+.pinbox{background:var(--panel);border:3px solid var(--line);border-radius:24px;padding:clamp(16px,2.6vw,32px);display:grid;gap:18px;justify-items:center;max-width:460px;margin:0 auto;width:100%}
+.who{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;font-weight:900;font-size:clamp(20px,2.4vw,28px)}
+.dots{display:flex;gap:14px}
+.dots i{width:30px;height:30px;border-radius:50%;border:4px solid var(--line);background:var(--bg)}
+.dots i.f{background:var(--ink);border-color:var(--ink)}
+.dots.shake{animation:shake .4s}
+@keyframes shake{20%,60%{transform:translateX(-10px)}40%,80%{transform:translateX(10px)}}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}
+.pad button{background:var(--bg);border:2px solid var(--line);border-radius:16px;font-size:34px;font-weight:900;padding:12px 0;box-shadow:var(--shadow);font-variant-numeric:tabular-nums}
+.pad button:active{transform:translateY(2px);box-shadow:none}
+.err{color:var(--bad);font-weight:700;min-height:1.5em;text-align:center}
+.link{color:var(--muted);text-decoration:underline;font-weight:700;padding:6px}
+
+.center{flex:1;display:grid;place-items:center;text-align:center;align-content:center;gap:16px}
+.center h2{font-size:clamp(30px,5vw,60px)}
+.center p{color:var(--muted);font-size:clamp(17px,2vw,24px);margin:0}
+.pulse{width:84px;height:84px;border-radius:50%;background:var(--leaf);animation:pulse 1.4s infinite ease-in-out}
+@keyframes pulse{0%,100%{transform:scale(.7);opacity:.5}50%{transform:scale(1);opacity:1}}
+
+/* 答題 */
+#s-quiz{flex:1;display:flex;flex-direction:column;gap:12px;min-height:0}
+.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.top .me{font-weight:900;font-size:clamp(16px,1.8vw,22px);margin-right:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pill{background:var(--panel);border:2px solid var(--line);border-radius:999px;padding:4px 16px;font-weight:900;font-size:clamp(16px,1.8vw,22px);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill.score{border-color:var(--sun);background:#FFF6D6;color:#2A1E00}
+.tbar{height:16px;border-radius:999px;background:var(--line);overflow:hidden}
+.tbar i{display:block;height:100%;background:var(--leaf);transform-origin:left;transform:scaleX(1)}
+.tbar.low i{background:var(--bad)}
+.qmeta{display:flex;align-items:center;gap:10px;color:var(--muted);font-weight:700}
+.qmeta .secs{margin-left:auto;font-weight:900;font-size:clamp(18px,2vw,26px);color:var(--ink);font-variant-numeric:tabular-nums}
+.q{font-size:clamp(24px,3.4vw,44px);line-height:1.4}
+.opts{flex:1;min-height:220px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.opt{position:relative;display:flex;align-items:center;gap:14px;text-align:left;padding:14px 18px;border-radius:20px;color:#fff;font-weight:700;font-size:clamp(18px,2.4vw,30px);line-height:1.3;box-shadow:0 5px 0 rgba(0,0,0,.18);min-width:0;transition:opacity .2s,transform .1s}
+.opt:active:not(:disabled){transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.opt:disabled{opacity:1}
+.opt[data-k="0"]{background:var(--a)}.opt[data-k="1"]{background:var(--b)}.opt[data-k="2"]{background:var(--c);color:var(--on-c)}.opt[data-k="3"]{background:var(--d)}
+.opt .sh{flex:none;width:clamp(36px,3.6vw,52px);height:clamp(36px,3.6vw,52px);border-radius:12px;background:rgba(255,255,255,.25);display:grid;place-items:center}
+.opt .sh svg{width:58%;height:58%;fill:currentColor}
+.opt .tx{min-width:0}
+.opt.dim{opacity:.3}
+.opt.right{outline:6px solid var(--ink);outline-offset:2px}
+.opt.wrong{opacity:.55}
+.opt.right::after,.opt.wrong::after{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:#fff;display:grid;place-items:center;font-weight:900;font-size:26px}
+.opt.right::after{content:"✓";color:var(--ok)}
+.opt.wrong::after{content:"✗";color:var(--bad)}
+.opt.picked{outline:6px solid var(--ink);outline-offset:2px}
+.fb{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:var(--panel);border:3px solid var(--line);border-radius:20px;padding:12px 18px}
+.fb.good{border-color:var(--ok)} .fb.bad{border-color:var(--bad)}
+.fb .v{font-family:var(--display);font-size:clamp(20px,2.6vw,32px);white-space:nowrap}
+.fb.good .v{color:var(--ok)} .fb.bad .v{color:var(--bad)}
+.fb p{margin:0;flex:1;min-width:200px;font-size:clamp(15px,1.8vw,22px);line-height:1.55}
+.fb p em{font-style:normal;color:var(--muted);font-size:.8em;font-weight:700;margin-left:6px}
+
+/* 結束 */
+.end h2{font-size:clamp(34px,5vw,64px)}
+.bigscore{font-family:var(--display);font-size:clamp(80px,14vw,180px);line-height:1;color:var(--petal);font-variant-numeric:tabular-nums}
+.stats{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.board{display:grid;gap:10px;width:min(640px,100%);text-align:left}
+.lane{display:grid;grid-template-columns:7.5em 1fr 4em;gap:10px;align-items:center;font-weight:700}
+.lane .nm{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.lane .bar{height:26px;border-radius:999px;background:var(--line);overflow:hidden}
+.lane .bar i{display:block;height:100%;border-radius:999px;transition:width .6s}
+.lane .v{text-align:right;font-weight:900;font-variant-numeric:tabular-nums}
+.lane.mine .nm{text-decoration:underline;text-underline-offset:4px}
+.top5{display:grid;gap:6px;width:min(640px,100%);text-align:left;margin:0;padding:0;list-style:none}
+.top5 li{display:grid;grid-template-columns:2.2em 1fr auto;gap:10px;align-items:center;background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:6px 14px;font-weight:700}
+.top5 li.me{border-color:var(--sun);background:#FFF6D6;color:#2A1E00}
+.top5 .p{font-variant-numeric:tabular-nums;font-weight:900}
+h3.sec{font-size:clamp(18px,2.2vw,24px);margin-top:6px}
+@media (max-width:640px){.opts{grid-template-columns:1fr}.lane{grid-template-columns:6em 1fr 3.4em}}
+</style>
+
+<div class="wrap" id="app">
+
+  <section id="s-login" hidden>
+    <div class="brand">植物大考驗<small>班級 PK 賽　先選班級，再點自己的座號</small></div>
+    <h2 class="step-title" id="t-cls">你是哪一班？</h2>
+    <div class="chips" id="cls-list"></div>
+    <div id="seat-box" hidden>
+      <h2 class="step-title" id="t-seat">點你的座號</h2>
+      <div class="seats" id="seat-list"></div>
+    </div>
+    <div id="pin-box" hidden>
+      <div class="pinbox">
+        <div class="who" id="who"></div>
+        <div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>
+        <div class="err" id="login-err"></div>
+        <div class="pad" id="pad"></div>
+        <button class="link" id="pin-back">換一個座號</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="center" id="s-wait" hidden>
+    <div class="pulse"></div>
+    <h2 id="wait-t">請等一下，老師還沒開始</h2>
+    <p id="wait-s">老師按下開始後，這個畫面會自動出現題目。</p>
+    <button class="link" id="wait-out">登出</button>
+  </section>
+
+  <section id="s-quiz" hidden>
+    <div class="top">
+      <div class="me"><span class="chip" id="q-team"></span><span id="q-me"></span></div>
+      <span class="pill" id="q-prog"></span>
+      <span class="pill score">得分 <b id="q-score">0</b></span>
+    </div>
+    <div class="tbar" id="tbar"><i id="tfill"></i></div>
+    <div class="qmeta"><span class="chip" id="q-topic"></span><span id="q-page"></span><span class="secs"><span id="q-secs">20</span> 秒</span></div>
+    <h1 class="q" id="q-text"></h1>
+    <div class="opts" id="opts"></div>
+    <div class="fb" id="fb" hidden>
+      <span class="v" id="fb-v"></span>
+      <p id="fb-p"></p>
+      <button class="btn" id="fb-next">下一題</button>
+    </div>
+  </section>
+
+  <section class="center end" id="s-end" hidden>
+    <h2>你完成了！</h2>
+    <div class="bigscore" id="e-score">0</div>
+    <div class="stats"><span class="pill" id="e-correct"></span><span class="pill" id="e-rank"></span></div>
+    <h3 class="sec">各組平均分數</h3>
+    <div class="board" id="e-teams"></div>
+    <h3 class="sec">全班前五名</h3>
+    <ul class="top5" id="e-top"></ul>
+    <p id="e-note"></p>
+    <button class="link" id="end-out">登出</button>
+  </section>
+</div>
+
+<div class="net" id="net" hidden>網路不穩，正在重新連線…</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const LS = 'plantpk-token';
+const SHAPES = [
+  '<svg viewBox="0 0 24 24"><path d="M12 3 22 20H2z"/></svg>',
+  '<svg viewBox="0 0 24 24"><path d="M12 2 22 12 12 22 2 12z"/></svg>',
+  '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>',
+  '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>'
+];
+const TOPIC_BG = {'植物的根':'#9A6B3F','植物的莖':'#4E8A2E','植物的葉':'#1F8F6A','受刺激的反應':'#E0457B','果實與種子傳播':'#2C86B8'};
+const S = {token:null, me:null, cls:null, classes:[], pickSeat:null, pin:'', q:null, deadline:0, locked:false, totals:{points:0,correct:0,answered:0}, total:30, raf:0, poll:0, shown:0};
+
+function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function lsSet(k,v){try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2600)}
+function show(id){['s-login','s-wait','s-quiz','s-end'].forEach(x=>$(x).hidden=x!==id);clearTimeout(S.poll);window.scrollTo(0,0)}
+
+function rpc(fn,...a){
+  return new Promise((res,rej)=>{
+    const r=google.script.run.withSuccessHandler(res).withFailureHandler(rej);
+    r[fn](...a);
+  });
+}
+async function rpcRetry(fn,...a){
+  for(let i=0;;i++){
+    try{const r=await rpc(fn,...a);$('net').hidden=true;return r}
+    catch(e){$('net').hidden=false;await sleep(Math.min(1500+i*500,5000))}
+  }
+}
+
+/* ---------- 登入 ---------- */
+async function initLogin(){
+  show('s-login');
+  $('seat-box').hidden=true;$('pin-box').hidden=true;
+  const r=await rpcRetry('api_classes');
+  S.classes=r.classes;S.total=r.total;
+  const box=$('cls-list');box.innerHTML='';
+  r.classes.forEach(c=>{
+    const b=document.createElement('button');b.className='cls-btn';b.textContent=c.name;
+    b.onclick=()=>pickClass(c.name);box.appendChild(b);
+  });
+  if(r.classes.length===1)pickClass(r.classes[0].name);
+  if(!r.classes.length)$('t-cls').textContent='老師還沒有建立班級';
+}
+async function pickClass(name){
+  S.cls=name;
+  [...$('cls-list').children].forEach(b=>b.classList.toggle('on',b.textContent===name));
+  $('pin-box').hidden=true;
+  const seats=await rpcRetry('api_seats',name);
+  const box=$('seat-list');box.innerHTML='';
+  seats.forEach(s=>{
+    const b=document.createElement('button');b.className='seat';
+    const n=document.createElement('b');n.textContent=s.seat;
+    const nm=document.createElement('span');nm.textContent=s.name||' ';
+    const d=document.createElement('i');d.style.background=s.color;d.title=s.teamName;
+    b.append(n,nm,d);
+    b.onclick=()=>pickSeat(s);box.appendChild(b);
+  });
+  $('seat-box').hidden=false;
+}
+function pickSeat(s){
+  S.pickSeat=s;S.pin='';
+  const w=$('who');w.innerHTML='';
+  const c=document.createElement('span');c.className='chip';c.style.background=s.color;c.textContent=s.teamName;
+  const t=document.createElement('span');t.textContent=s.seat+' 號 '+s.name;
+  w.append(c,t);
+  paintPin();$('login-err').textContent='';
+  $('pin-box').hidden=false;$('seat-box').hidden=true;
+}
+function paintPin(){[...$('dots').children].forEach((d,i)=>d.classList.toggle('f',i<S.pin.length))}
+function buildPad(){
+  const p=$('pad');p.innerHTML='';
+  ['1','2','3','4','5','6','7','8','9','⌫','0','清除'].forEach(k=>{
+    const b=document.createElement('button');b.textContent=k;
+    if(k==='⌫'||k==='清除')b.style.fontSize='20px';
+    b.onclick=()=>padKey(k);p.appendChild(b);
+  });
+}
+async function padKey(k){
+  if(S.busy)return;
+  $('login-err').textContent='';
+  if(k==='⌫')S.pin=S.pin.slice(0,-1);
+  else if(k==='清除')S.pin='';
+  else if(S.pin.length<4)S.pin+=k;
+  paintPin();
+  if(S.pin.length===4){
+    S.busy=true;
+    const r=await rpcRetry('api_login',S.cls,S.pickSeat.seat,S.pin);
+    S.busy=false;
+    if(r.error){
+      $('login-err').textContent=r.error;S.pin='';
+      const d=$('dots');d.classList.remove('shake');void d.offsetWidth;d.classList.add('shake');
+      setTimeout(paintPin,250);return;
+    }
+    S.token=r.token;S.me=r.me;lsSet(LS,r.token);play();
+  }
+}
+$('pin-back').onclick=()=>{$('pin-box').hidden=true;$('seat-box').hidden=false};
+function logout(){lsSet(LS,null);S.token=null;S.me=null;initLogin()}
+$('wait-out').onclick=logout;$('end-out').onclick=logout;
+
+/* ---------- 遊戲流程 ---------- */
+function paintMe(){
+  const m=S.me;
+  $('q-team').textContent=m.teamName;$('q-team').style.background=m.color;
+  $('q-me').textContent=m.seat+' 號 '+(m.name||'');
+}
+async function play(){
+  paintMe();
+  const r=await rpcRetry('api_next',S.token);
+  route(r);
+}
+function route(r){
+  if(r.relogin){logout();return}
+  if(r.error){toast(r.error);return}
+  if(r.me)S.me=r.me;
+  if(r.totals)S.totals=r.totals;
+  if(r.total)S.total=r.total;
+  paintMe();$('q-score').textContent=S.totals.points;S.shown=S.totals.points;
+  if(r.closed){showWait();return}
+  if(r.done){showEnd();return}
+  showQuestion(r.q);
+}
+function showWait(){
+  show('s-wait');
+  const started=S.totals.answered>0;
+  $('wait-t').textContent=started?'老師暫停了，請稍等':'請等一下，老師還沒開始';
+  S.poll=setTimeout(async()=>{
+    const r=await rpcRetry('api_next',S.token);
+    if(r.closed&&!r.relogin){showWait();return}
+    route(r);
+  },3000);
+}
+
+function showQuestion(q){
+  show('s-quiz');
+  S.q=q;S.locked=false;
+  $('q-prog').textContent='第 '+q.n+' / '+q.total+' 題';
+  const t=$('q-topic');t.textContent=q.topic;t.style.background=TOPIC_BG[q.topic]||'var(--muted)';
+  $('q-page').textContent='課本 p.'+q.page;
+  $('q-text').textContent=q.text;
+  $('fb').hidden=true;
+  const box=$('opts');box.innerHTML='';
+  q.options.forEach((txt,k)=>{
+    const b=document.createElement('button');b.className='opt';b.dataset.k=k;
+    const sh=document.createElement('span');sh.className='sh';sh.innerHTML=SHAPES[k];
+    const tx=document.createElement('span');tx.className='tx';tx.textContent=txt;
+    b.append(sh,tx);b.onclick=()=>answer(k);box.appendChild(b);
+  });
+  S.deadline=performance.now()+q.remainMs;S.secMax=q.sec;
+  cancelAnimationFrame(S.raf);tick();
+}
+function tick(){
+  const left=S.deadline-performance.now();
+  const pct=Math.max(0,Math.min(1,left/(S.secMax*1000)));
+  $('tfill').style.transform='scaleX('+pct+')';
+  $('tbar').classList.toggle('low',left<=5000);
+  $('q-secs').textContent=Math.max(0,Math.ceil(left/1000));
+  if(left<=0&&!S.locked){answer(-1);return}
+  if(!S.locked)S.raf=requestAnimationFrame(tick);
+}
+async function answer(k){
+  if(S.locked)return;
+  S.locked=true;cancelAnimationFrame(S.raf);
+  const btns=[...$('opts').children];
+  btns.forEach(b=>b.disabled=true);
+  if(k>=0)btns[k].classList.add('picked');
+  const r=await rpcRetry('api_answer',S.token,S.q.id,k);
+  if(r.relogin){logout();return}
+  if(r.error){toast(r.error);return}
+  S.totals=r.totals;
+  btns.forEach((b,i)=>{
+    b.classList.remove('picked');
+    if(i===r.correctIndex)b.classList.add('right');
+    else if(i===k)b.classList.add('wrong');
+    else b.classList.add('dim');
+  });
+  const fb=$('fb');fb.hidden=false;fb.className='fb '+(r.correct?'good':'bad');
+  $('fb-v').textContent=r.correct?'答對了！ +'+r.points+' 分':(r.timeout?'時間到':'答錯了');
+  const p=$('fb-p');p.textContent=r.explanation||'';
+  const em=document.createElement('em');em.textContent='（課本 p.'+r.page+'）';p.appendChild(em);
+  const last=r.totals.answered>=S.q.total;
+  $('fb-next').textContent=last?'看結果':'下一題';
+  countUp(r.totals.points);
+  fb.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+function countUp(to){
+  const from=S.shown,t0=performance.now();
+  (function f(now){
+    const p=Math.min(1,(now-t0)/600);
+    $('q-score').textContent=Math.round(from+(to-from)*p);
+    if(p<1)requestAnimationFrame(f);else S.shown=to;
+  })(t0);
+}
+$('fb-next').onclick=async()=>{
+  $('fb-next').disabled=true;
+  const r=await rpcRetry('api_next',S.token);
+  $('fb-next').disabled=false;
+  route(r);
+};
+
+/* ---------- 結束與戰況 ---------- */
+async function showEnd(){
+  show('s-end');
+  $('e-score').textContent=S.totals.points;
+  $('e-correct').textContent='答對 '+S.totals.correct+' / '+S.total+' 題';
+  await paintBoard();
+}
+async function paintBoard(){
+  const b=await rpcRetry('api_board',S.token);
+  if(b.relogin){logout();return}
+  if($('s-end').hidden)return;
+  $('e-rank').textContent='全班第 '+b.me.rank+' 名';
+  const max=Math.max(1,...b.teams.map(t=>t.avg));
+  const box=$('e-teams');box.innerHTML='';
+  b.teams.slice().sort((x,y)=>y.avg-x.avg).forEach(t=>{
+    const row=document.createElement('div');row.className='lane'+(t.idx===S.me.team?' mine':'');
+    const nm=document.createElement('span');nm.className='nm';
+    const d=document.createElement('span');d.className='dot';d.style.background=t.color;
+    nm.append(d,t.name);
+    const bar=document.createElement('div');bar.className='bar';
+    const i=document.createElement('i');i.style.background=t.color;i.style.width=(t.avg/max*100)+'%';bar.appendChild(i);
+    const v=document.createElement('span');v.className='v';v.textContent=t.avg;
+    row.append(nm,bar,v);box.appendChild(row);
+  });
+  const ul=$('e-top');ul.innerHTML='';
+  b.top.forEach((s,i)=>{
+    const li=document.createElement('li');if(s.seat===S.me.seat)li.className='me';
+    const r=document.createElement('span');r.textContent=i+1;
+    const n=document.createElement('span');n.textContent=s.seat+' 號 '+s.name;
+    const p=document.createElement('span');p.className='p';p.textContent=s.points+' 分';
+    li.append(r,n,p);ul.appendChild(li);
+  });
+  $('e-note').textContent=b.unfinished>0?'還有 '+b.unfinished+' 位同學在作答，名次會繼續變動':'全班都完成了！';
+  S.poll=setTimeout(paintBoard,5000);
+}
+
+/* ---------- 啟動 ---------- */
+(async function(){
+  buildPad();
+  const t=lsGet(LS);
+  if(t){
+    const r=await rpcRetry('api_resume',t);
+    if(!r.error){S.token=t;S.me=r.me;play();return}
+    lsSet(LS,null);
+  }
+  initLogin();
+})();
+</script>
