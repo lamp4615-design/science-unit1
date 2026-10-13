@@ -130,10 +130,10 @@ h3.sec{font-size:clamp(18px,2.2vw,24px);margin-top:6px}
   </section>
 
   <section class="center end" id="s-end" hidden>
-    <h2>你完成了！</h2>
+    <h2 id="e-title">你完成了！</h2>
     <div class="bigscore" id="e-score">0</div>
     <div class="stats"><span class="pill" id="e-correct"></span><span class="pill" id="e-rank"></span></div>
-    <h3 class="sec">各組平均分數</h3>
+    <h3 class="sec" id="h-teams">各組平均分數</h3>
     <div class="board" id="e-teams"></div>
     <h3 class="sec">全班前五名</h3>
     <ul class="top5" id="e-top"></ul>
@@ -349,6 +349,8 @@ $('fb-next').onclick=async()=>{
 /* ---------- 結束與戰況 ---------- */
 async function showEnd(){
   show('s-end');
+  S.endPhase=S.me.phase;
+  $('e-title').textContent=S.me.phase==='solo'?'個人賽完成！':'團體賽完成！';
   $('e-score').textContent=S.totals.points;
   $('e-correct').textContent='答對 '+S.totals.correct+' / '+S.total+' 題';
   await paintBoard();
@@ -357,7 +359,10 @@ async function paintBoard(){
   const b=await rpcRetry('api_board',S.token);
   if(b.relogin){logout();return}
   if($('s-end').hidden)return;
-  $('e-rank').textContent='全班第 '+b.me.rank+' 名';
+  if(b.phase!==S.endPhase){play();return}  // 老師已分組、進入下一階段
+  const solo=b.phase==='solo';
+  $('h-teams').hidden=solo;$('e-teams').hidden=solo;
+  $('e-rank').textContent=(solo?'個人賽':'團體賽')+' 全班第 '+b.me.rank+' 名';
   const max=Math.max(1,...b.teams.map(t=>t.avg));
   const box=$('e-teams');box.innerHTML='';
   b.teams.slice().sort((x,y)=>y.avg-x.avg).forEach(t=>{
@@ -378,7 +383,7 @@ async function paintBoard(){
     const p=document.createElement('span');p.className='p';p.textContent=s.points+' 分';
     li.append(r,n,p);ul.appendChild(li);
   });
-  $('e-note').textContent=b.unfinished>0?'還有 '+b.unfinished+' 位同學在作答，名次會繼續變動':'全班都完成了！';
+  $('e-note').textContent=b.unfinished>0?'還有 '+b.unfinished+' 位同學在作答，名次會繼續變動':(solo?'個人賽結束！等老師依名次分組，就會進入團體賽。':'全班都完成了！');
   S.poll=setTimeout(paintBoard,5000);
 }
 

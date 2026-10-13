@@ -1,4 +1,45 @@
-<?!= include('Style') ?>
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>植物大考驗 後台</title>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@500;700;900&display=swap">
+<style>
+/* 明亮的教室遊戲風：葉綠為主色，花粉紅與陽光黃做點綴。僅淺色主題。 */
+:root{
+  color-scheme:light;
+  --bg:#EEF4EC; --panel:#FFFFFF; --ink:#16301F; --muted:#557060; --line:#CFDDCF;
+  --leaf:#2E8B57; --leaf-ink:#FFFFFF; --petal:#E0457B; --sun:#F2B705;
+  --a:#D93F45; --b:#2D68D2; --c:#E7A400; --d:#24935A; --on-c:#2A1E00;
+  --ok:#1F9D55; --bad:#C8343A; --shadow:0 3px 0 rgba(22,48,31,.14);
+  --display:"Huninn","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;touch-action:manipulation}
+button:disabled{cursor:default;opacity:.5}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+[hidden]{display:none!important}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--leaf);color:var(--leaf-ink);font-family:var(--display);font-size:22px;padding:12px 30px;border-radius:999px;box-shadow:var(--shadow)}
+.btn.ghost{background:var(--panel);color:var(--ink);border:2px solid var(--line);font-family:var(--body);font-weight:700;font-size:16px;padding:9px 18px}
+.btn.warn{background:var(--bad)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 12px;border-radius:999px;font-weight:700;font-size:14px;color:#fff;background:var(--muted);white-space:nowrap}
+.dot{width:.8em;height:.8em;border-radius:50%;display:inline-block;flex:none}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 20px;border-radius:999px;font-weight:700;z-index:50;max-width:90vw}
+.net{position:fixed;top:0;left:0;right:0;background:var(--sun);color:#2A1E00;text-align:center;font-weight:700;padding:4px;z-index:60;font-size:14px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+</head>
+<body>
 <style>
 .wrap{max-width:1280px;margin:0 auto;padding:16px clamp(16px,2.4vw,32px) 48px;display:grid;gap:16px}
 .gate{min-height:100vh;display:grid;place-items:center;padding:16px}
@@ -66,7 +107,7 @@ body.tv .tvtop{display:grid}
 <section class="gate" id="gate">
   <form id="gate-form">
     <h1>植物大考驗 後台</h1>
-    <p>密碼放在試算表的「設定」分頁，項目名稱是「後台密碼」。</p>
+    <p>密碼放在 Google 試算表的「設定」分頁，項目名稱是「後台密碼」。</p>
     <input class="in" id="pw" type="password" autocomplete="current-password" placeholder="後台密碼" aria-label="後台密碼">
     <div class="bad" id="gate-err"></div>
     <button class="btn" type="submit">進入</button>
@@ -90,7 +131,12 @@ const SK = 'plantpk-admin';
 let PW = '', D = null, tab = 'live', cls = '', timer = 0, busy = false;
 function ssGet(){try{return sessionStorage.getItem(SK)}catch(e){return null}}
 function ssSet(v){try{v?sessionStorage.setItem(SK,v):sessionStorage.removeItem(SK)}catch(e){}}
-function rpc(fn,...a){return new Promise((res,rej)=>{google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...a)})}
+const API = 'https://script.google.com/macros/s/AKfycbwPUDAzfXpJ4mUsxx5PQJ0u74fDB7oXAHhl2bkBlnB-j_CvBTaZGTELhITW6orEgiFo/exec';
+async function rpc(fn,...a){
+  const r = await fetch(API, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({fn, args:a})});
+  if (!r.ok) throw new Error('http ' + r.status);
+  return r.json();
+}
 function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e}
 function toast(msg){const t=el('div','toast',msg);document.body.appendChild(t);setTimeout(()=>t.remove(),2600)}
 const fmtSec = ms => ms ? (ms/1000).toFixed(1)+' 秒' : '–';
@@ -172,8 +218,17 @@ function viewLive(v){
   const c1 = el('section','card'); g.appendChild(c1);
   if (cls === '*') {
     c1.appendChild(el('h2','','兩班合併時不分組，請看右邊個人排行'));
+  } else if (D.phase === 'solo') {
+    c1.appendChild(el('h2','','目前：個人賽（第 1～' + D.soloCount + ' 題）'));
+    const unfinished = S.filter(s => s.logged && s.answered < D.totalQ).length;
+    c1.appendChild(el('p','mute','個人賽結束後，按下面的按鈕：依個人賽名次做 S 型分組（名次 1→N 進第 1→N 組，下一輪反過來 N→1），接著進入團體賽。分組後會自動暫停作答，老師再按「開放作答」開始團體賽。'));
+    if (unfinished) c1.appendChild(el('p','bad','還有 ' + unfinished + ' 位已登入的同學沒做完個人賽'));
+    const sn = el('button','btn','個人賽結束，依名次 S 型分組');
+    sn.style.fontSize = '18px'; sn.style.justifySelf = 'start';
+    sn.onclick = () => confirmBtn(sn, '再按一次確認分組', async () => { if (await act('adm_snake', cls)) { toast('已分組，進入團體賽（請按「開放作答」）'); load(); } });
+    c1.appendChild(sn);
   } else {
-    c1.appendChild(el('h2','','各組平均分數（只算已登入的同學）'));
+    c1.appendChild(el('h2','','團體賽：各組平均分數（只算已登入的同學）'));
     const max = Math.max(1, ...D.teams.map(t=>t.avg));
     D.teams.slice().sort((a,b)=>b.avg-a.avg).forEach(t => {
       const row = el('div','lane');
@@ -185,8 +240,14 @@ function viewLive(v){
       c1.appendChild(row);
     });
   }
+  if (cls !== '*' && D.phase === 'team') {
+    const bk = el('button','btn ghost','回到個人賽');
+    bk.style.justifySelf = 'start';
+    bk.onclick = () => confirmBtn(bk, '再按一次確認（組別保留）', async () => { if (await act('adm_backToSolo', cls)) { toast('已回到個人賽'); load(); } });
+    c1.appendChild(bk);
+  }
   const c2 = el('section','card'); g.appendChild(c2);
-  c2.appendChild(el('h2','','個人排行（同分比誰花的時間少）'));
+  c2.appendChild(el('h2','','個人排行（' + (D.phase === 'solo' ? '個人賽' : D.phase === 'team' ? '團體賽' : '目前階段') + '，同分比誰花的時間少）'));
   const top = el('ol','tvtop');
   S.slice(0,10).forEach((s,i) => {
     const li = el('li'); li.append(el('span','r',i+1), el('span','',(s.cls?s.cls+' ':'')+s.seat+' 號 '+s.name), el('span','p',s.points+' 分'));
@@ -195,17 +256,17 @@ function viewLive(v){
   c2.appendChild(top);
   const w = el('div','scroll tbl'); c2.appendChild(w);
   const t = el('table'); w.appendChild(t);
-  const hr = el('tr'); ['名次', ...(cls==='*'?['班級']:[]), '座號','姓名','組別','進度','答對','總分','平均秒數'].forEach((h,i)=>{ const th = el('th',(h==='總分'||h==='答對'||h==='平均秒數')?'num':'',h); hr.appendChild(th); });
+  const hr = el('tr'); ['名次', ...(cls==='*'?['班級']:[]), '座號','姓名','組別','進度','答對','個人賽分','團體賽分','平均秒數'].forEach((h,i)=>{ const th = el('th',(h==='個人賽分'||h==='團體賽分'||h==='答對'||h==='平均秒數')?'num':'',h); hr.appendChild(th); });
   t.appendChild(hr);
   S.forEach(s => {
     const r = el('tr', s.logged ? '' : 'mute');
     r.appendChild(el('td','',s.rank));
     if (cls==='*') r.appendChild(el('td','',s.cls));
     r.appendChild(el('td','',s.seat)); r.appendChild(el('td','',s.name||'–'));
-    const tc = el('td'); if (cls!=='*') { const T = D.teams.filter(x=>x.idx===s.team)[0]; if (T) { const d = el('span','dot'); d.style.background = T.color; tc.append(d,' '+T.name); } } else tc.textContent = '–';
+    const tc = el('td'); const T0 = cls!=='*' ? D.teams.filter(x=>x.idx===s.team)[0] : null; if (T0) { const d = el('span','dot'); d.style.background = T0.color; tc.append(d,' '+T0.name); } else tc.textContent = '–';
     r.appendChild(tc);
     const pc = el('td'); const pr = el('span','prog'); const pi = el('i'); pi.style.width = (D.totalQ?s.answered/D.totalQ*100:0)+'%'; pr.appendChild(pi); pc.append(pr, s.answered+'/'+D.totalQ); r.appendChild(pc);
-    r.appendChild(el('td','num',s.correct)); r.appendChild(el('td','num',s.points));
+    r.appendChild(el('td','num',s.correct)); r.appendChild(el('td','num',s.soloPoints)); r.appendChild(el('td','num',s.teamPoints));
     r.appendChild(el('td','num', s.answered ? (s.ms/s.answered/1000).toFixed(1)+' 秒' : '–'));
     t.appendChild(r);
   });
@@ -232,7 +293,7 @@ function viewQa(v){
     const row = el('div','q-row');
     row.appendChild(el('span','mute',q.id));
     const tx = el('div','tx'); tx.appendChild(el('span','',q.text));
-    tx.appendChild(el('small','',q.topic + '　課本 p.' + q.page + (q.topWrong ? '　最多人選錯：「' + q.topWrong + '」（' + q.topWrongN + ' 人）' : '')));
+    tx.appendChild(el('small','',(q.solo ? '個人賽' : '團體賽') + '　' + q.topic + '　課本 p.' + q.page + (q.topWrong ? '　最多人選錯：「' + q.topWrong + '」（' + q.topWrongN + ' 人）' : '')));
     row.appendChild(tx);
     const m = el('div','meter'); const i = el('i', pct>=80?'good':pct>=60?'mid':'low'); i.style.width = pct+'%'; m.appendChild(i);
     row.append(m, el('b','',q.n?pct+'%':'–'));
@@ -296,6 +357,11 @@ function viewSet(v){
   const l = el('label','','每題作答秒數'); const si = el('input','in'); si.type = 'number'; si.id = 's-sec'; si.value = D.sec; l.appendChild(si); f2.appendChild(l);
   const sb = el('button','btn ghost','儲存秒數'); sb.onclick = async () => { if (await act('adm_setSec', si.value)) { toast('已儲存'); load(); } }; f2.appendChild(sb);
   c2.appendChild(f2);
+  const f4 = el('div','form');
+  const l4 = el('label','','個人賽題數（其餘題目留給團體賽）'); const so = el('input','in'); so.type = 'number'; so.id = 's-solo'; so.value = D.soloCount; l4.appendChild(so); f4.appendChild(l4);
+  const sob = el('button','btn ghost','儲存題數'); sob.onclick = async () => { if (await act('adm_setSolo', so.value)) { toast('已儲存'); load(); } }; f4.appendChild(sob);
+  c2.appendChild(f4);
+  c2.appendChild(el('p','mute','題庫共 ' + D.totalAll + ' 題：第 1～' + D.soloCount + ' 題是個人賽，第 ' + (D.soloCount + 1) + '～' + D.totalAll + ' 題是團體賽。'));
   const f3 = el('div','form');
   const l3 = el('label','','新的後台密碼'); const pi = el('input','in'); pi.id = 's-pw'; pi.type = 'text'; pi.placeholder = '至少 4 個字'; l3.appendChild(pi); f3.appendChild(l3);
   const pb = el('button','btn ghost','更改密碼'); pb.onclick = async () => { if (await act('adm_setPassword', pi.value)) { PW = pi.value.trim(); ssSet(PW); toast('密碼已更改'); pi.value=''; } }; f3.appendChild(pb);
@@ -336,3 +402,5 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.b
   $('pw').focus();
 })();
 </script>
+</body>
+</html>

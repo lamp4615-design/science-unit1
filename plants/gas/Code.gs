@@ -9,6 +9,8 @@ const TZ = 'Asia/Taipei';
 const K_PW = '後台密碼';
 const K_SEC = '每題秒數';
 const K_EPOCH = '重置次數(勿改)';
+const K_SOLO = '個人賽題數';
+const K_PHASE = '階段|'; // 後面接班級名稱；值為 solo（個人賽）或 team（團體賽）
 
 const SPEC = {
   config:    {name: '設定',     cols: ['key', 'value'], head: ['項目', '值']},
@@ -34,11 +36,30 @@ const SEED = [[1,"植物的根",42,"植物的「根」有什麼功能？","行�
 function doGet(e) {
   ensure_();
   const admin = e && e.parameter && e.parameter.page === 'admin';
-  return HtmlService.createTemplateFromFile(admin ? 'Admin' : 'Index')
+  if (admin) {
+    return HtmlService.createHtmlOutput('老師後台已搬到 GitHub 頁面：<a href="' + ADMIN_URL + '">' + ADMIN_URL + '</a>')
+      .setTitle('植物大考驗 後台');
+  }
+  return HtmlService.createTemplateFromFile('Index')
     .evaluate()
-    .setTitle(admin ? '植物大考驗 後台' : '植物大考驗 PK賽')
+    .setTitle('植物大考驗 PK賽')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+const ADMIN_URL = 'https://lamp4615-design.github.io/science-unit1/plants/admin.html';
+
+/** 後台 API：GitHub 上的後台頁面用 fetch POST 呼叫，只開放 ADM_API 裡的函式，且每個函式都會驗證後台密碼。 */
+function doPost(e) {
+  let out;
+  try {
+    const req = JSON.parse(e.postData.contents);
+    const fn = ADM_API[String(req.fn)];
+    out = fn ? fn.apply(null, req.args || []) : {error: 'bad request'};
+  } catch (err) {
+    out = {error: String(err && err.message || err)};
+  }
+  return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
 }
 
 function include(name) {
@@ -151,6 +172,35 @@ function questions_() {
     .sort(function (a, b) { return a.id - b.id; });
 }
 
+/* ---------------- 階段：個人賽 → S 型分組 → 團體賽 ---------------- */
+
+function phase_(cls) {
+  return String(cfg_(K_PHASE + cls, 'solo')) === 'team' ? 'team' : 'solo';
+}
+
+/** 個人賽題數：預設題庫的一半，至少 1 題，且要留至少 1 題給團體賽。 */
+function soloCount_(total) {
+  let n = Number(cfg_(K_SOLO, Math.ceil(total / 2)));
+  if (!(n >= 1)) n = 1;
+  if (n > total - 1) n = Math.max(1, total - 1);
+  return Math.floor(n);
+}
+
+function soloQs_(qs) { return qs.slice(0, soloCount_(qs.length)); }
+function teamQs_(qs) { return qs.slice(soloCount_(qs.length)); }
+
+/** 這個班目前這個階段要作答的題目。 */
+function phaseQs_(cls) {
+  const qs = questions_();
+  return phase_(cls) === 'solo' ? soloQs_(qs) : teamQs_(qs);
+}
+
+function idSet_(qs) {
+  const o = {};
+  qs.forEach(function (q) { o[String(q.id)] = true; });
+  return o;
+}
+
 function classOf_(name) {
   return table_('classes').filter(function (c) { return String(c.name) === String(name); })[0];
 }
@@ -161,8 +211,12 @@ function teamInfo_(n) {
 }
 
 function meInfo_(st) {
+  const phase = phase_(st.cls);
+  if (phase === 'solo') {
+    return {cls: String(st.cls), seat: Number(st.seat), name: String(st.name || ''), team: 0, teamName: '個人賽', color: '#557060', phase: phase};
+  }
   const t = teamInfo_(st.team);
-  return {cls: String(st.cls), seat: Number(st.seat), name: String(st.name || ''), team: t.team, teamName: t.teamName, color: t.color};
+  return {cls: String(st.cls), seat: Number(st.seat), name: String(st.name || ''), team: t.team, teamName: t.teamName, color: t.color, phase: phase};
 }
 
 /* ---------------- 亂數：每位學生題目與選項順序不同 ---------------- */
@@ -208,7 +262,11 @@ function api_seats(cls) {
   return table_('roster')
     .filter(function (r) { return String(r.cls) === String(cls); })
     .sort(function (a, b) { return a.seat - b.seat; })
-    .map(function (r) { const t = teamInfo_(r.team); return {seat: Number(r.seat), name: String(r.name || ''), teamName: t.teamName, color: t.color}; });
+    .map(function (r) {
+      if (phase_(cls) === 'solo') return {seat: Number(r.seat), name: String(r.name || ''), teamName: '個人賽', color: '#CFDDCF'};
+      const t = teamInfo_(r.team);
+      return {seat: Number(r.seat), name: String(r.name || ''), teamName: t.teamName, color: t.color};
+    });
 }
 
 function api_login(cls, seat, pin) {
@@ -259,8 +317,9 @@ function api_next(token) {
   if (!st) return {error: '請重新登入', relogin: true};
   const cl = classOf_(st.cls);
   const me = meInfo_(st);
-  const qs = questions_();
-  const list = mine_(st.cls, st.seat);
+  const qs = phaseQs_(st.cls);
+  const inPhase = idSet_(qs);
+  const list = mine_(st.cls, st.seat).filter(function (a) { return inPhase[String(a.qid)]; });
   const totals = totals_(list);
   if (!cl || !truthy_(cl.open)) return {closed: true, me: me, totals: totals, total: qs.length};
   const order = shuffle_(qs.map(function (q) { return q.id; }), st.cls + '|' + st.seat);
@@ -293,10 +352,12 @@ function api_answer(token, qid, choice) {
     const st = byToken_(token);
     if (!st) return {error: '請重新登入', relogin: true};
     qid = Number(qid); choice = Number(choice);
-    const q = questions_().filter(function (x) { return x.id === qid; })[0];
+    const pqs = phaseQs_(st.cls);
+    const inPhase = idSet_(pqs);
+    const q = pqs.filter(function (x) { return x.id === qid; })[0];
     if (!q) return {error: '找不到這一題'};
     const idx = shuffle_([0, 1, 2, 3], st.cls + '|' + st.seat + '|' + q.id);
-    const list = mine_(st.cls, st.seat);
+    const list = mine_(st.cls, st.seat).filter(function (a) { return inPhase[String(a.qid)]; });
     const prev = list.filter(function (a) { return Number(a.qid) === qid; })[0];
     if (prev) {
       return {dup: true, correct: !!Number(prev.ok), points: Number(prev.pts) || 0, correctIndex: idx.indexOf(q.ans),
@@ -324,25 +385,40 @@ function api_answer(token, qid, choice) {
 
 /* ---------------- 排行榜計算 ---------------- */
 
+/**
+ * 每位學生的成績。answered / correct / points / ms 是「目前階段」的數字（個人賽或團體賽），
+ * soloPoints / soloMs 固定是個人賽成績（S 型分組用），teamPoints 固定是團體賽成績。
+ */
 function studentStats_(cls, roster, answers) {
+  const phase = phase_(cls);
+  const solo = idSet_(soloQs_(questions_()));
   const by = {};
   roster.forEach(function (r) {
     by[Number(r.seat)] = {
       seat: Number(r.seat), name: String(r.name || ''), team: Number(r.team), pin: String(r.pin),
       logged: String(r.last || '').trim() !== '', last: String(r.last || ''),
-      answered: 0, correct: 0, points: 0, ms: 0
+      answered: 0, correct: 0, points: 0, ms: 0,
+      soloPoints: 0, soloMs: 0, teamPoints: 0,
+      _s: {answered: 0, correct: 0, points: 0, ms: 0}, _t: {answered: 0, correct: 0, points: 0, ms: 0}
     };
   });
   answers.forEach(function (a) {
     if (String(a.cls) !== String(cls)) return;
     const s = by[Number(a.seat)];
     if (!s) return;
-    s.answered++;
-    s.correct += Number(a.ok) ? 1 : 0;
-    s.points += Number(a.pts) || 0;
-    s.ms += Number(a.ms) || 0;
+    const b = solo[String(a.qid)] ? s._s : s._t;
+    b.answered++;
+    b.correct += Number(a.ok) ? 1 : 0;
+    b.points += Number(a.pts) || 0;
+    b.ms += Number(a.ms) || 0;
   });
   const arr = Object.keys(by).map(function (k) { return by[k]; });
+  arr.forEach(function (s) {
+    const cur = phase === 'solo' ? s._s : s._t;
+    s.answered = cur.answered; s.correct = cur.correct; s.points = cur.points; s.ms = cur.ms;
+    s.soloPoints = s._s.points; s.soloMs = s._s.ms; s.teamPoints = s._t.points;
+    delete s._s; delete s._t;
+  });
   arr.sort(function (a, b) { return b.points - a.points || a.ms - b.ms || a.seat - b.seat; });
   arr.forEach(function (s, i) { s.rank = i + 1; });
   return arr;
@@ -369,14 +445,17 @@ function api_board(token) {
   const cl = classOf_(st.cls);
   const roster = table_('roster').filter(function (r) { return String(r.cls) === String(st.cls); });
   const students = studentStats_(st.cls, roster, table_('answers'));
-  const teams = teamStats_(students, Number(cl ? cl.teams : 4));
+  const phase = phase_(st.cls);
+  const nQ = phaseQs_(st.cls).length;
+  const teams = phase === 'team' ? teamStats_(students, Number(cl ? cl.teams : 4)) : [];
   const me = students.filter(function (s) { return s.seat === Number(st.seat); })[0];
   return {
+    phase: phase,
     teams: teams,
     top: students.slice(0, 5).map(function (s) { return {seat: s.seat, name: s.name, team: s.team, points: s.points, answered: s.answered}; }),
     me: {rank: me.rank, points: me.points, correct: me.correct, answered: me.answered},
     size: students.length,
-    unfinished: students.filter(function (s) { return s.logged && s.answered < questions_().length; }).length
+    unfinished: students.filter(function (s) { return s.logged && s.answered < nQ; }).length
   };
 }
 
@@ -397,10 +476,16 @@ function adm_data(pw, cls) {
   if (!cls || (cls !== '*' && !classes.some(function (c) { return c.name === cls; }))) cls = classes.length ? classes[0].name : '';
   const qs = questions_();
   const allAnswers = table_('answers');
+  const nSolo = soloCount_(qs.length);
   const out = {
     classes: classes, cls: cls, sec: secLimit_(), totalQ: qs.length, now: nowStr_(),
+    soloCount: nSolo, totalAll: qs.length, phase: '',
     students: [], teams: [], qstats: [], topics: []
   };
+  if (cls && cls !== '*') {
+    out.phase = phase_(cls);
+    out.totalQ = out.phase === 'solo' ? nSolo : qs.length - nSolo;
+  }
   if (!cls) return out;
   const rosterAll = table_('roster');
   const targets = cls === '*' ? classes.map(function (c) { return c.name; }) : [cls];
@@ -410,7 +495,7 @@ function adm_data(pw, cls) {
     const cl = classes.filter(function (c) { return c.name === cls; })[0];
     const roster = rosterAll.filter(function (r) { return String(r.cls) === cls; });
     out.students = studentStats_(cls, roster, allAnswers);
-    out.teams = teamStats_(out.students, cl.teams);
+    out.teams = out.phase === 'team' ? teamStats_(out.students, cl.teams) : [];
   } else {
     let all = [];
     targets.forEach(function (c) {
@@ -423,7 +508,7 @@ function adm_data(pw, cls) {
   }
 
   const qmap = {};
-  qs.forEach(function (q) { qmap[q.id] = {id: q.id, topic: q.topic, page: q.page, text: q.text, n: 0, ok: 0, wrong: {}}; });
+  qs.forEach(function (q, i) { qmap[q.id] = {id: q.id, topic: q.topic, page: q.page, text: q.text, solo: i < nSolo, n: 0, ok: 0, wrong: {}}; });
   answers.forEach(function (a) {
     const m = qmap[Number(a.qid)];
     if (!m) return;
@@ -435,7 +520,7 @@ function adm_data(pw, cls) {
   Object.keys(qmap).forEach(function (k) {
     const m = qmap[k];
     const top = Object.keys(m.wrong).sort(function (x, y) { return m.wrong[y] - m.wrong[x]; })[0];
-    out.qstats.push({id: m.id, topic: m.topic, page: m.page, text: m.text, n: m.n, ok: m.ok, topWrong: top || '', topWrongN: top ? m.wrong[top] : 0});
+    out.qstats.push({id: m.id, solo: m.solo, topic: m.topic, page: m.page, text: m.text, n: m.n, ok: m.ok, topWrong: top || '', topWrongN: top ? m.wrong[top] : 0});
     const t = topicMap[m.topic] || (topicMap[m.topic] = {topic: m.topic, n: 0, ok: 0});
     t.n += m.n; t.ok += m.ok;
   });
@@ -497,6 +582,9 @@ function adm_resetAnswers(pw, cls) {
   sh.getRange(1, 1, 1, spec.head.length).setValues([spec.head]);
   if (keep.length) sh.getRange(2, 1, keep.length, spec.cols.length).setValues(keep);
   setCfg_(K_EPOCH, Number(cfg_(K_EPOCH, 1)) + 1);
+  table_('classes').forEach(function (c) {
+    if (cls === '*' || String(c.name) === String(cls)) setCfg_(K_PHASE + c.name, 'solo');
+  });
   return {ok: true};
 }
 
@@ -527,3 +615,50 @@ function adm_newPins(pw, cls) {
   });
   return {ok: true};
 }
+
+/** 個人賽結束：依個人賽名次做 S 型分組（1→N 組，再 N→1 組…），然後切換到團體賽並暫停作答。 */
+function adm_snake(pw, cls) {
+  const bad = auth_(pw); if (bad) return bad;
+  const cl = classOf_(cls);
+  if (!cl) return {error: '請先選一個班級'};
+  if (phase_(cls) !== 'solo') return {error: '這個班已經在團體賽了'};
+  const k = Math.max(1, Number(cl.teams));
+  const roster = table_('roster').filter(function (r) { return String(r.cls) === String(cls); });
+  const ranked = studentStats_(cls, roster, table_('answers')).slice()
+    .sort(function (a, b) { return b.soloPoints - a.soloPoints || a.soloMs - b.soloMs || a.seat - b.seat; });
+  const teamOf = {};
+  ranked.forEach(function (s, i) {
+    const round = Math.floor(i / k), pos = i % k;
+    teamOf[s.seat] = round % 2 === 0 ? pos + 1 : k - pos;
+  });
+  roster.forEach(function (r) { setCells_('roster', r._row, {team: teamOf[Number(r.seat)]}); });
+  setCfg_(K_PHASE + cls, 'team');
+  table_('classes').forEach(function (c) {
+    if (String(c.name) === String(cls)) setCells_('classes', c._row, {open: 'FALSE'});
+  });
+  return {ok: true};
+}
+
+/** 回到個人賽（不清除成績；已作答的題目仍算已答）。 */
+function adm_backToSolo(pw, cls) {
+  const bad = auth_(pw); if (bad) return bad;
+  if (!classOf_(cls)) return {error: '請先選一個班級'};
+  setCfg_(K_PHASE + cls, 'solo');
+  return {ok: true};
+}
+
+function adm_setSolo(pw, n) {
+  const bad = auth_(pw); if (bad) return bad;
+  const total = questions_().length;
+  n = Number(n);
+  if (!(n >= 1 && n <= total - 1)) return {error: '個人賽題數請填 1 到 ' + (total - 1)};
+  setCfg_(K_SOLO, Math.floor(n));
+  return {ok: true};
+}
+
+const ADM_API = {
+  adm_check: adm_check, adm_data: adm_data, adm_setOpen: adm_setOpen, adm_createClass: adm_createClass,
+  adm_setNames: adm_setNames, adm_resetAnswers: adm_resetAnswers, adm_setSec: adm_setSec,
+  adm_setPassword: adm_setPassword, adm_newPins: adm_newPins,
+  adm_snake: adm_snake, adm_backToSolo: adm_backToSolo, adm_setSolo: adm_setSolo
+};

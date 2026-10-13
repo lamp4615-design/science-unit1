@@ -25,9 +25,22 @@ node build.js
 
 每題格式：`id`、`topic`（單元）、`page`（課本頁碼）、`text`、`opts`（四個選項）、`ans`（正解索引 0–3）、`exp`（解說）。
 
-## 班級 PK 賽（gas/）
+## 班級 PK 賽
+
+流程：**個人賽 → 依名次 S 型分組 → 團體賽**。題庫前 15 題（後台可調）是個人賽，其餘是團體賽。
+
+- 學生端：Apps Script 網頁（見上方連結），程式在 `gas/`
+- 老師後台：[admin.html](https://lamp4615-design.github.io/science-unit1/plants/admin.html)，畫面在 GitHub，資料與密碼驗證在 Apps Script
+- 資料：Google 試算表（設定／班級／名單／作答紀錄／題庫）
+
+S 型分組：名次 1→N 依序進第 1→N 組，下一輪反過來 N→1，如此往返，讓各組實力平均。
+
+### 部署 gas/
 
 1. 建立 Google 試算表 → 擴充功能 → Apps Script
-2. 貼上 `gas/` 內四個檔案（`Code.gs`、`Index.html`、`Admin.html`、`Style.html`）
+2. 貼上 `gas/` 內三個檔案：`Code.gs`、`Index.html`、`Style.html`（HTML 檔名不用加副檔名）
 3. 執行一次 `setup()`，後台密碼會產生在「設定」分頁
-4. 部署為網頁應用程式；學生用部署網址，老師後台加上 `?page=admin`
+4. 部署為網頁應用程式（執行身分：我；存取：所有人）
+5. 每次修改程式後，要「管理部署作業 → 編輯 → 新版本」才會生效
+
+`Code.gs` 裡的 `ADMIN_URL`、`admin.html` 裡的 `API` 是彼此的網址，換部署或換 repo 時記得同步修改。
