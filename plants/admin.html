@@ -87,6 +87,25 @@ td.num,th.num{text-align:right}
 textarea.in{min-height:140px;font-size:16px;font-weight:500}
 .ok{color:var(--ok);font-weight:700}.bad{color:var(--bad);font-weight:700}
 
+/* 分組 */
+.names{display:flex;flex-wrap:wrap;gap:6px}
+.names span{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:1px 10px;font-size:14px;font-weight:700}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.tcol{background:var(--bg);border:2px solid var(--line);border-top-width:8px;border-radius:16px;padding:12px;display:grid;gap:6px;align-content:start;min-width:0}
+.tcol h3{display:flex;align-items:center;gap:8px;font-size:22px}
+.tcol .sum{color:var(--muted);font-size:13px;font-weight:700}
+.mem{display:grid;grid-template-columns:2.2em minmax(0,1fr) auto auto;gap:6px;align-items:center;font-weight:700;padding:3px 0;border-bottom:1px dashed var(--line)}
+.mem .r{color:var(--muted);font-variant-numeric:tabular-nums}
+.mem .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mem .nm small{color:var(--bad);font-size:12px;margin-left:4px}
+.mem .p{font-variant-numeric:tabular-nums}
+.mem select{font-size:13px;padding:3px 4px;border-radius:8px;border:1px solid var(--line);background:var(--panel)}
+.mem.moved{background:#FFF6D6}
+body.tv .tgrid{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+body.tv .tcol h3{font-size:clamp(26px,2.8vw,44px)}
+body.tv .mem{font-size:clamp(20px,2.2vw,34px);grid-template-columns:1fr}
+body.tv .mem .r,body.tv .mem .p,body.tv .tcol .sum{display:none}
+
 /* 大螢幕 */
 body.tv .head .tabs,body.tv .clsrow,body.tv .only-ctl,body.tv .tbl{display:none}
 body.tv .wrap{max-width:none;padding-top:20px}
@@ -129,6 +148,7 @@ body.tv .tvtop{display:grid}
 const $ = id => document.getElementById(id);
 const SK = 'plantpk-admin';
 let PW = '', D = null, tab = 'live', cls = '', timer = 0, busy = false;
+let DRAFT = null; // 分組草稿 {cls, phase, k, teamOf:{座號:組別}}，按「確定」才寫回試算表
 function ssGet(){try{return sessionStorage.getItem(SK)}catch(e){return null}}
 function ssSet(v){try{v?sessionStorage.setItem(SK,v):sessionStorage.removeItem(SK)}catch(e){}}
 const API = 'https://script.google.com/macros/s/AKfycbwPUDAzfXpJ4mUsxx5PQJ0u74fDB7oXAHhl2bkBlnB-j_CvBTaZGTELhITW6orEgiFo/exec';
@@ -172,7 +192,7 @@ async function act(fn, ...args){
 }
 
 /* ---------- 版面 ---------- */
-const TABS = [['live','即時戰況'],['qa','各題分析'],['roster','名單與密碼'],['set','設定']];
+const TABS = [['live','即時戰況'],['team','分組'],['qa','各題分析'],['roster','名單與密碼'],['set','設定']];
 function renderChrome(){
   const t = $('tabs'); t.innerHTML = '';
   TABS.forEach(([k,n]) => { const b = el('button','tab'+(tab===k?' on':''),n); b.onclick = () => { tab = k; load(); }; t.appendChild(b); });
@@ -196,10 +216,11 @@ function render(){
   const v = $('view'); v.innerHTML = '';
   if (!D.classes.length && tab !== 'set') { tab = 'set'; renderChrome(); }
   if (tab === 'live') viewLive(v);
+  else if (tab === 'team') viewTeam(v);
   else if (tab === 'qa') viewQa(v);
   else if (tab === 'roster') viewRoster(v);
   else viewSet(v);
-  $('h-title').textContent = '植物大考驗 ' + ({live:'戰況',qa:'各題分析',roster:'名單與密碼',set:'設定'}[tab]) + (cls && cls!=='*' ? '　' + cls : cls==='*' ? '　兩班合併' : '');
+  $('h-title').textContent = '植物大考驗 ' + ({live:'戰況',team:'分組',qa:'各題分析',roster:'名單與密碼',set:'設定'}[tab]) + (cls && cls!=='*' ? '　' + cls : cls==='*' ? '　兩班合併' : '');
 }
 
 /* ---------- 即時戰況 ---------- */
@@ -220,15 +241,14 @@ function viewLive(v){
     c1.appendChild(el('h2','','兩班合併時不分組，請看右邊個人排行'));
   } else if (D.phase === 'solo') {
     c1.appendChild(el('h2','','目前：個人賽（第 1～' + D.soloCount + ' 題）'));
-    const unfinished = S.filter(s => s.logged && s.answered < D.totalQ).length;
-    c1.appendChild(el('p','mute','個人賽結束後，按下面的按鈕：依個人賽名次做 S 型分組（名次 1→N 進第 1→N 組，下一輪反過來 N→1），接著進入團體賽。分組後會自動暫停作答，老師再按「開放作答」開始團體賽。'));
-    if (unfinished) c1.appendChild(el('p','bad','還有 ' + unfinished + ' 位已登入的同學沒做完個人賽'));
-    const sn = el('button','btn','個人賽結束，依名次 S 型分組');
+    c1.appendChild(el('p','mute','個人賽結束後，到「分組」頁：系統依個人賽名次先排好 S 型分組，老師可以預覽、手動調整，按確定後才會進入團體賽。'));
+    c1.appendChild(missingBox(S));
+    const sn = el('button','btn','前往分組（預覽／調整）');
     sn.style.fontSize = '18px'; sn.style.justifySelf = 'start';
-    sn.onclick = () => confirmBtn(sn, '再按一次確認分組', async () => { if (await act('adm_snake', cls)) { toast('已分組，進入團體賽（請按「開放作答」）'); load(); } });
+    sn.onclick = () => { tab = 'team'; load(); };
     c1.appendChild(sn);
   } else {
-    c1.appendChild(el('h2','','團體賽：各組平均分數（只算已登入的同學）'));
+    c1.appendChild(el('h2','','團體賽：各組平均分數（只算團體賽有作答的同學）'));
     const max = Math.max(1, ...D.teams.map(t=>t.avg));
     D.teams.slice().sort((a,b)=>b.avg-a.avg).forEach(t => {
       const row = el('div','lane');
@@ -271,6 +291,124 @@ function viewLive(v){
     t.appendChild(r);
   });
   if (!S.length) c2.appendChild(el('p','mute','這個班級還沒有名單'));
+}
+
+/* ---------- 分組 ---------- */
+// 個人賽名次：分數高 → 有作答 → 花的時間少 → 座號小（與後端 byRank_ 一致）
+function soloRanked(S){
+  return S.slice().sort((a,b) => b.soloPoints - a.soloPoints || (b.soloAnswered > 0) - (a.soloAnswered > 0) || a.soloMs - b.soloMs || a.seat - b.seat);
+}
+// S 型分組：名次 1→k 進第 1→k 組，下一輪反過來 k→1，如此往返
+function snake(S, k){
+  const o = {};
+  soloRanked(S).forEach((s,i) => { const r = Math.floor(i / k), p = i % k; o[s.seat] = r % 2 === 0 ? p + 1 : k - p; });
+  return o;
+}
+function savedTeams(S){ const o = {}; S.forEach(s => { o[s.seat] = s.team; }); return o; }
+function curClass(){ return D.classes.filter(c => c.name === cls)[0]; }
+function clampK(n){ return Math.min(D.teamDefs.length, Math.max(1, Number(n) || 4)); }
+
+/** 個人賽沒作答、沒做完的同學名單 */
+function missingBox(S){
+  const box = el('div','only-ctl');
+  const none = S.filter(s => !s.soloAnswered), part = S.filter(s => s.soloAnswered > 0 && s.soloAnswered < D.soloCount);
+  const line = (label, list) => {
+    if (!list.length) return;
+    const p = el('p','bad',label + '（' + list.length + ' 人）'); p.style.margin = '4px 0';
+    const n = el('div','names'); list.forEach(s => n.appendChild(el('span','',s.seat + ' ' + (s.name || ''))));
+    box.append(p, n);
+  };
+  line('個人賽完全沒作答', none);
+  line('個人賽還沒做完', part);
+  if (!none.length && !part.length) box.appendChild(el('p','ok','全班都做完個人賽了'));
+  return box;
+}
+
+function viewTeam(v){
+  const cl = curClass();
+  if (!cl) { v.appendChild(el('p','mute','請先選一個班級')); return; }
+  const S = D.students;
+  if (!S.length) { v.appendChild(el('p','mute','這個班級還沒有名單')); return; }
+  const solo = D.phase === 'solo';
+  if (!DRAFT || DRAFT.cls !== cls || DRAFT.phase !== D.phase) DRAFT = {cls, phase: D.phase, k: clampK(cl.teams), teamOf: null, from: solo ? 'snake' : 'saved'};
+  if (!DRAFT.teamOf) DRAFT.teamOf = DRAFT.from === 'snake' ? snake(S, DRAFT.k) : savedTeams(S);
+  const k = DRAFT.k;
+  S.forEach(s => { const t = DRAFT.teamOf[s.seat]; if (!(t >= 1 && t <= k)) DRAFT.teamOf[s.seat] = 1; });
+  const saved = solo ? null : savedTeams(S);
+  const base = saved || snake(S, k); // 用來標出「手動換過組」的人
+
+  // 控制區
+  const c = el('section','card only-ctl'); v.appendChild(c);
+  c.appendChild(el('h2','', solo ? '個人賽結束後分組' : '團體賽進行中：調整組別'));
+  c.appendChild(el('p','mute', solo
+    ? '下面已依個人賽名次排好 S 型分組（名次 1→N 進第 1→N 組，下一輪反過來 N→1）。用每個人右邊的選單可以換組，黃底是手動換過的。確定後按最下面的按鈕，系統會切換到團體賽並暫停作答，老師再按「開放作答」開始。'
+    : '可以換組或改組數，按「儲存組別調整」才會生效。團體賽分數跟著人走，換組後兩組的平均分數會馬上改變。黃底是還沒儲存的調整。'));
+  c.appendChild(missingBox(S));
+  const f = el('div','row');
+  const lab = el('label','','組數 '); lab.style.fontWeight = '700';
+  const ki = el('input','in'); ki.type = 'number'; ki.min = 1; ki.max = D.teamDefs.length; ki.value = k; ki.style.width = '5em';
+  lab.appendChild(ki);
+  const re = el('button','btn ghost','讀取最新成績，重新排 S 型');
+  re.onclick = () => {
+    const nk = Number(ki.value);
+    if (!(nk >= 1 && nk <= D.teamDefs.length && nk === Math.floor(nk))) { toast('組數請填 1 到 ' + D.teamDefs.length); return; }
+    DRAFT.k = nk; DRAFT.from = 'snake'; DRAFT.teamOf = null; load();
+  };
+  f.append(lab, re);
+  if (saved) {
+    const rv = el('button','btn ghost','還原成目前的組別');
+    rv.onclick = () => { DRAFT.k = clampK(cl.teams); DRAFT.from = 'saved'; DRAFT.teamOf = null; load(); };
+    f.appendChild(rv);
+  }
+  c.appendChild(f);
+
+  // 各組名單
+  const ranked = soloRanked(S), rankOf = {};
+  ranked.forEach((s,i) => { rankOf[s.seat] = i + 1; });
+  const b = el('section','card'); v.appendChild(b);
+  const head = el('h2','', solo ? '分組預覽' : '各組名單'); b.appendChild(head);
+  const note = el('p','mute only-ctl'); b.appendChild(note);
+  const g = el('div','tgrid'); b.appendChild(g);
+  const avgs = [], empty = [];
+  for (let t = 1; t <= k; t++) {
+    const def = D.teamDefs[t-1];
+    const m = ranked.filter(s => DRAFT.teamOf[s.seat] === t);
+    const avg = m.length ? Math.round(m.reduce((x,s) => x + s.soloPoints, 0) / m.length * 10) / 10 : 0;
+    if (m.length) avgs.push(avg); else empty.push(def.name);
+    const col = el('div','tcol'); col.style.borderTopColor = def.color;
+    const h = el('h3'); const d = el('span','dot'); d.style.background = def.color; h.append(d, def.name);
+    col.append(h, el('div','sum', m.length + ' 人　個人賽平均 ' + avg + ' 分'));
+    m.forEach(s => {
+      const row = el('div','mem' + (base[s.seat] !== t ? ' moved' : ''));
+      const nm = el('span','nm', s.seat + ' ' + (s.name || ''));
+      if (!s.soloAnswered) nm.appendChild(el('small','','未作答'));
+      else if (s.soloAnswered < D.soloCount) nm.appendChild(el('small','','沒做完'));
+      const sel = el('select','only-ctl'); sel.setAttribute('aria-label', s.seat + ' 號換組');
+      for (let j = 1; j <= k; j++) { const o = el('option','',D.teamDefs[j-1].name); o.value = j; o.selected = j === t; sel.appendChild(o); }
+      sel.onchange = () => { DRAFT.teamOf[s.seat] = Number(sel.value); render(); };
+      row.append(el('span','r','#' + rankOf[s.seat]), nm, el('span','p', s.soloPoints + ' 分'), sel);
+      col.appendChild(row);
+    });
+    g.appendChild(col);
+  }
+  note.textContent = '#數字是個人賽名次。' + (avgs.length > 1 ? '各組個人賽平均分最多相差 ' + Math.round((Math.max(...avgs) - Math.min(...avgs)) * 10) / 10 + ' 分。' : '');
+
+  // 送出
+  const a = el('section','card only-ctl'); v.appendChild(a);
+  const changed = solo || k !== Number(cl.teams) || S.some(s => saved[s.seat] !== DRAFT.teamOf[s.seat]);
+  if (empty.length) a.appendChild(el('p','bad', empty.join('、') + ' 沒有人'));
+  if (!solo) a.appendChild(el('p', changed ? 'bad' : 'mute', changed ? '有還沒儲存的調整' : '目前沒有調整'));
+  const go = el('button','btn', solo ? '確定分組，進入團體賽' : '儲存組別調整');
+  go.style.justifySelf = 'start'; go.style.fontSize = '18px'; go.disabled = !changed;
+  go.onclick = () => confirmBtn(go, solo ? '再按一次確認（會暫停作答）' : '再按一次確認', async () => {
+    const r = await act('adm_applyTeams', cls, k, S.map(s => [s.seat, DRAFT.teamOf[s.seat]]));
+    if (!r) return;
+    DRAFT = null;
+    toast(r.started ? '已分組，進入團體賽（請按「開放作答」）' : '組別已更新');
+    if (r.started) tab = 'live';
+    load();
+  });
+  a.appendChild(go);
 }
 
 /* ---------- 各題分析 ---------- */
@@ -387,7 +525,7 @@ function viewSet(v){
 function tv(on){
   document.body.classList.toggle('tv', on);
   $('btn-tv').hidden = on; $('btn-tv-off').hidden = !on;
-  if (on) { tab = 'live'; load(); }
+  if (on) { if (tab !== 'team') tab = 'live'; load(); } // 分組頁也可以投影各組名單
   if (on) { try { document.documentElement.requestFullscreen().catch(()=>{}); } catch(e){} }
   else { try { if (document.fullscreenElement) document.exitFullscreen(); } catch(e){} }
 }

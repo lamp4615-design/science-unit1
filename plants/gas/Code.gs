@@ -74,11 +74,21 @@ function setup() {
 
 /* ---------------- 試算表存取 ---------------- */
 
+// 同一次呼叫裡，同一張表只讀一次（每次呼叫都是新的執行環境，不會讀到上一次的舊資料）。
+// 寫入某張表之後要呼叫 dirty_() 清掉它的暫存。
+const MEMO = {};
+const SHEETS = {};
+
+function dirty_(key) {
+  delete MEMO[key];
+}
+
 function ensure_() {
   Object.keys(SPEC).forEach(function (k) { sheet_(k); });
 }
 
 function sheet_(key) {
+  if (SHEETS[key]) return SHEETS[key];
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const spec = SPEC[key];
   let sh = ss.getSheetByName(spec.name);
@@ -88,6 +98,7 @@ function sheet_(key) {
     sh.setFrozenRows(1);
     seed_(key, sh);
   }
+  SHEETS[key] = sh;
   return sh;
 }
 
@@ -108,6 +119,7 @@ function randomPw_() {
 }
 
 function table_(key) {
+  if (MEMO[key]) return MEMO[key];
   const sh = sheet_(key);
   const spec = SPEC[key];
   const last = sh.getLastRow();
@@ -124,6 +136,7 @@ function table_(key) {
     });
     out.push(o);
   });
+  MEMO[key] = out;
   return out;
 }
 
@@ -134,6 +147,7 @@ function setCells_(key, row, obj) {
     const c = cols.indexOf(k);
     if (c >= 0) sh.getRange(row, c + 1).setValue(obj[k]);
   });
+  dirty_(key);
 }
 
 function cfg_(name, def) {
@@ -144,7 +158,7 @@ function cfg_(name, def) {
 function setCfg_(name, val) {
   const r = table_('config').filter(function (x) { return x.key === name; })[0];
   if (r) setCells_('config', r._row, {value: val});
-  else sheet_('config').appendRow([name, val]);
+  else { sheet_('config').appendRow([name, val]); dirty_('config'); }
 }
 
 function truthy_(v) {
@@ -345,49 +359,66 @@ function api_next(token) {
   };
 }
 
+/**
+ * 交答案。讀資料、算分都在鎖外面做，鎖裡只做「檢查有沒有重複交」和「寫一列」，
+ * 全班同時交答案時才不會排隊太久。重複交（網路重試、連點）用快取記號擋掉。
+ */
 function api_answer(token, qid, choice) {
+  const st = byToken_(token);
+  if (!st) return {error: '請重新登入', relogin: true};
+  qid = Number(qid); choice = Number(choice);
+  const pqs = phaseQs_(st.cls);
+  const inPhase = idSet_(pqs);
+  const q = pqs.filter(function (x) { return x.id === qid; })[0];
+  if (!q) return {error: '這一題已經結束了'};
+  const idx = shuffle_([0, 1, 2, 3], st.cls + '|' + st.seat + '|' + q.id);
+  const list = mine_(st.cls, st.seat).filter(function (a) { return inPhase[String(a.qid)]; });
+  const totals = totals_(list);
+  const reply = function (ok, pts, dup) {
+    return {dup: dup, correct: !!ok, points: pts, correctIndex: idx.indexOf(q.ans), explanation: q.exp, page: q.page,
+      timeout: !dup && choice < 0, totals: totals};
+  };
+  const prev = list.filter(function (a) { return Number(a.qid) === qid; })[0];
+  if (prev) return reply(Number(prev.ok), Number(prev.pts) || 0, true);
+
+  const sec = secLimit_();
+  const cache = CacheService.getScriptCache();
+  const key = startKey_(st.cls, st.seat, qid);
+  const t0 = Number(cache.get(key) || 0);
+  const ms = t0 ? Date.now() - t0 : sec * 1000;
+  const inTime = choice >= 0 && choice <= 3 && ms <= sec * 1000 + 3000;
+  const correct = inTime && idx[choice] === q.ans;
+  const points = correct ? 10 + Math.round(5 * Math.max(0, 1 - ms / (sec * 1000))) : 0;
+  const label = choice >= 0 && choice <= 3 ? q.opts[idx[choice]] : '(逾時)';
+  const doneKey = 'done|' + key; // key 裡有重置次數，清除成績後記號自動失效
+
   const lock = LockService.getScriptLock();
-  lock.waitLock(20000);
+  lock.waitLock(20000); // 等不到會丟錯，學生端會自動重試
   try {
-    const st = byToken_(token);
-    if (!st) return {error: '請重新登入', relogin: true};
-    qid = Number(qid); choice = Number(choice);
-    const pqs = phaseQs_(st.cls);
-    const inPhase = idSet_(pqs);
-    const q = pqs.filter(function (x) { return x.id === qid; })[0];
-    if (!q) return {error: '找不到這一題'};
-    const idx = shuffle_([0, 1, 2, 3], st.cls + '|' + st.seat + '|' + q.id);
-    const list = mine_(st.cls, st.seat).filter(function (a) { return inPhase[String(a.qid)]; });
-    const prev = list.filter(function (a) { return Number(a.qid) === qid; })[0];
-    if (prev) {
-      return {dup: true, correct: !!Number(prev.ok), points: Number(prev.pts) || 0, correctIndex: idx.indexOf(q.ans),
-        explanation: q.exp, page: q.page, timeout: false, totals: totals_(list)};
+    const hit = cache.get(doneKey);
+    if (hit) {
+      const h = JSON.parse(hit);
+      totals.answered++; totals.correct += h.ok; totals.points += h.pts;
+      return reply(h.ok, h.pts, true);
     }
-    const sec = secLimit_();
-    const cache = CacheService.getScriptCache();
-    const key = startKey_(st.cls, st.seat, qid);
-    const t0 = Number(cache.get(key) || 0);
-    const ms = t0 ? Date.now() - t0 : sec * 1000;
-    const inTime = choice >= 0 && choice <= 3 && ms <= sec * 1000 + 3000;
-    const correct = inTime && idx[choice] === q.ans;
-    const points = correct ? 10 + Math.round(5 * Math.max(0, 1 - ms / (sec * 1000))) : 0;
-    const label = choice >= 0 && choice <= 3 ? q.opts[idx[choice]] : '(逾時)';
     sheet_('answers').appendRow([nowStr_(), String(st.cls), Number(st.seat), qid, label, correct ? 1 : 0, Math.min(ms, sec * 1000), points]);
-    cache.remove(key);
-    const totals = totals_(list);
-    totals.answered++; totals.correct += correct ? 1 : 0; totals.points += points;
-    return {correct: correct, points: points, correctIndex: idx.indexOf(q.ans), explanation: q.exp, page: q.page,
-      timeout: choice < 0, totals: totals};
+    SpreadsheetApp.flush();
+    cache.put(doneKey, JSON.stringify({ok: correct ? 1 : 0, pts: points}), 21600);
   } finally {
     lock.releaseLock();
   }
+  dirty_('answers');
+  cache.remove(key);
+  totals.answered++; totals.correct += correct ? 1 : 0; totals.points += points;
+  return reply(correct, points, false);
 }
 
 /* ---------------- 排行榜計算 ---------------- */
 
 /**
  * 每位學生的成績。answered / correct / points / ms 是「目前階段」的數字（個人賽或團體賽），
- * soloPoints / soloMs 固定是個人賽成績（S 型分組用），teamPoints 固定是團體賽成績。
+ * soloPoints / soloMs / soloAnswered 固定是個人賽成績（S 型分組用），teamPoints 固定是團體賽成績。
+ * 排名：分數高的在前；同分時有作答的排在完全沒作答的前面，再比花費時間，最後比座號。
  */
 function studentStats_(cls, roster, answers) {
   const phase = phase_(cls);
@@ -398,7 +429,7 @@ function studentStats_(cls, roster, answers) {
       seat: Number(r.seat), name: String(r.name || ''), team: Number(r.team), pin: String(r.pin),
       logged: String(r.last || '').trim() !== '', last: String(r.last || ''),
       answered: 0, correct: 0, points: 0, ms: 0,
-      soloPoints: 0, soloMs: 0, teamPoints: 0,
+      soloPoints: 0, soloMs: 0, soloAnswered: 0, teamPoints: 0,
       _s: {answered: 0, correct: 0, points: 0, ms: 0}, _t: {answered: 0, correct: 0, points: 0, ms: 0}
     };
   });
@@ -416,19 +447,24 @@ function studentStats_(cls, roster, answers) {
   arr.forEach(function (s) {
     const cur = phase === 'solo' ? s._s : s._t;
     s.answered = cur.answered; s.correct = cur.correct; s.points = cur.points; s.ms = cur.ms;
-    s.soloPoints = s._s.points; s.soloMs = s._s.ms; s.teamPoints = s._t.points;
+    s.soloPoints = s._s.points; s.soloMs = s._s.ms; s.soloAnswered = s._s.answered; s.teamPoints = s._t.points;
     delete s._s; delete s._t;
   });
-  arr.sort(function (a, b) { return b.points - a.points || a.ms - b.ms || a.seat - b.seat; });
+  arr.sort(byRank_);
   arr.forEach(function (s, i) { s.rank = i + 1; });
   return arr;
 }
 
+function byRank_(a, b) {
+  return b.points - a.points || (b.answered > 0) - (a.answered > 0) || a.ms - b.ms || a.seat - b.seat;
+}
+
+/** 各組平均：只算團體賽有作答的同學，缺席的人不會把組平均拉低。 */
 function teamStats_(students, teamCount) {
   const out = [];
   for (let i = 1; i <= teamCount; i++) {
     const m = students.filter(function (s) { return s.team === i; });
-    const act = m.filter(function (s) { return s.logged; });
+    const act = m.filter(function (s) { return s.answered > 0; });
     const pts = act.reduce(function (x, s) { return x + s.points; }, 0);
     const t = teamInfo_(i);
     out.push({idx: i, name: t.teamName, color: t.color, size: m.length, active: act.length, points: pts,
@@ -479,7 +515,7 @@ function adm_data(pw, cls) {
   const nSolo = soloCount_(qs.length);
   const out = {
     classes: classes, cls: cls, sec: secLimit_(), totalQ: qs.length, now: nowStr_(),
-    soloCount: nSolo, totalAll: qs.length, phase: '',
+    soloCount: nSolo, totalAll: qs.length, phase: '', teamDefs: TEAMS,
     students: [], teams: [], qstats: [], topics: []
   };
   if (cls && cls !== '*') {
@@ -502,7 +538,7 @@ function adm_data(pw, cls) {
       const roster = rosterAll.filter(function (r) { return String(r.cls) === c; });
       studentStats_(c, roster, allAnswers).forEach(function (s) { s.cls = c; all.push(s); });
     });
-    all.sort(function (a, b) { return b.points - a.points || a.ms - b.ms; });
+    all.sort(byRank_);
     all.forEach(function (s, i) { s.rank = i + 1; });
     out.students = all;
   }
@@ -555,6 +591,7 @@ function adm_createClass(pw, name, count, teams) {
   sheet_('classes').appendRow([name, teams, 'FALSE']);
   const sh = sheet_('roster');
   sh.getRange(sh.getLastRow() + 1, 1, rows.length, 7).setValues(rows);
+  dirty_('classes'); dirty_('roster');
   return {ok: true, cls: name};
 }
 
@@ -581,6 +618,7 @@ function adm_resetAnswers(pw, cls) {
   sh.clearContents();
   sh.getRange(1, 1, 1, spec.head.length).setValues([spec.head]);
   if (keep.length) sh.getRange(2, 1, keep.length, spec.cols.length).setValues(keep);
+  dirty_('answers');
   setCfg_(K_EPOCH, Number(cfg_(K_EPOCH, 1)) + 1);
   table_('classes').forEach(function (c) {
     if (cls === '*' || String(c.name) === String(cls)) setCfg_(K_PHASE + c.name, 'solo');
@@ -616,27 +654,39 @@ function adm_newPins(pw, cls) {
   return {ok: true};
 }
 
-/** 個人賽結束：依個人賽名次做 S 型分組（1→N 組，再 N→1 組…），然後切換到團體賽並暫停作答。 */
-function adm_snake(pw, cls) {
+/**
+ * 套用組別。S 型分組的預覽與手動調整都在後台畫面做，這裡只負責檢查並寫入。
+ * k：組數；assign：[[座號, 組別], ...]，班上每位同學都要分到 1～k 組。
+ * 個人賽階段送出：寫入組別、切換到團體賽並暫停作答。團體賽中送出：只更新組別（分數跟著人走）。
+ */
+function adm_applyTeams(pw, cls, k, assign) {
   const bad = auth_(pw); if (bad) return bad;
   const cl = classOf_(cls);
   if (!cl) return {error: '請先選一個班級'};
-  if (phase_(cls) !== 'solo') return {error: '這個班已經在團體賽了'};
-  const k = Math.max(1, Number(cl.teams));
-  const roster = table_('roster').filter(function (r) { return String(r.cls) === String(cls); });
-  const ranked = studentStats_(cls, roster, table_('answers')).slice()
-    .sort(function (a, b) { return b.soloPoints - a.soloPoints || a.soloMs - b.soloMs || a.seat - b.seat; });
+  k = Number(k);
+  if (!(k >= 1 && k <= TEAMS.length && k === Math.floor(k))) return {error: '組數請填 1 到 ' + TEAMS.length};
   const teamOf = {};
-  ranked.forEach(function (s, i) {
-    const round = Math.floor(i / k), pos = i % k;
-    teamOf[s.seat] = round % 2 === 0 ? pos + 1 : k - pos;
+  (assign || []).forEach(function (p) { teamOf[Number(p[0])] = Number(p[1]); });
+  const roster = table_('roster').filter(function (r) { return String(r.cls) === String(cls); });
+  if (!roster.length) return {error: '這個班級還沒有名單'};
+  const miss = roster.filter(function (r) {
+    const t = teamOf[Number(r.seat)];
+    return !(t >= 1 && t <= k && t === Math.floor(t));
   });
-  roster.forEach(function (r) { setCells_('roster', r._row, {team: teamOf[Number(r.seat)]}); });
-  setCfg_(K_PHASE + cls, 'team');
-  table_('classes').forEach(function (c) {
-    if (String(c.name) === String(cls)) setCells_('classes', c._row, {open: 'FALSE'});
-  });
-  return {ok: true};
+  if (miss.length) return {error: miss.map(function (r) { return r.seat; }).join('、') + ' 號還沒有分到組'};
+
+  // 整欄讀出、改好再一次寫回，比一格一格寫快很多
+  const sh = sheet_('roster');
+  const rng = sh.getRange(2, SPEC.roster.cols.indexOf('team') + 1, sh.getLastRow() - 1, 1);
+  const vals = rng.getValues();
+  roster.forEach(function (r) { vals[r._row - 2][0] = teamOf[Number(r.seat)]; });
+  rng.setValues(vals);
+  dirty_('roster');
+
+  const start = phase_(cls) === 'solo';
+  setCells_('classes', cl._row, start ? {teams: k, open: 'FALSE'} : {teams: k});
+  if (start) setCfg_(K_PHASE + cls, 'team');
+  return {ok: true, started: start};
 }
 
 /** 回到個人賽（不清除成績；已作答的題目仍算已答）。 */
@@ -660,5 +710,5 @@ const ADM_API = {
   adm_check: adm_check, adm_data: adm_data, adm_setOpen: adm_setOpen, adm_createClass: adm_createClass,
   adm_setNames: adm_setNames, adm_resetAnswers: adm_resetAnswers, adm_setSec: adm_setSec,
   adm_setPassword: adm_setPassword, adm_newPins: adm_newPins,
-  adm_snake: adm_snake, adm_backToSolo: adm_backToSolo, adm_setSolo: adm_setSolo
+  adm_applyTeams: adm_applyTeams, adm_backToSolo: adm_backToSolo, adm_setSolo: adm_setSolo
 };

@@ -314,7 +314,7 @@ async function answer(k){
   if(k>=0)btns[k].classList.add('picked');
   const r=await rpcRetry('api_answer',S.token,S.q.id,k);
   if(r.relogin){logout();return}
-  if(r.error){toast(r.error);return}
+  if(r.error){toast(r.error);setTimeout(play,1500);return}  // 例如老師剛好分組換階段：回到等待畫面或下一題
   S.totals=r.totals;
   btns.forEach((b,i)=>{
     b.classList.remove('picked');
