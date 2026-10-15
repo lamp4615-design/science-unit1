@@ -431,7 +431,7 @@ function viewQa(v){
     const row = el('div','q-row');
     row.appendChild(el('span','mute',q.id));
     const tx = el('div','tx'); tx.appendChild(el('span','',q.text));
-    tx.appendChild(el('small','',(q.solo ? '個人賽' : '團體賽') + '　' + q.topic + '　課本 p.' + q.page + (q.topWrong ? '　最多人選錯：「' + q.topWrong + '」（' + q.topWrongN + ' 人）' : '')));
+    tx.appendChild(el('small','',(q.solo ? '個人賽' : '團體賽') + (q.both ? '・兩階段都考' : '') + '　' + q.topic + '　課本 p.' + q.page + (q.topWrong ? '　最多人選錯：「' + q.topWrong + '」（' + q.topWrongN + ' 人）' : '')));
     row.appendChild(tx);
     const m = el('div','meter'); const i = el('i', pct>=80?'good':pct>=60?'mid':'low'); i.style.width = pct+'%'; m.appendChild(i);
     row.append(m, el('b','',q.n?pct+'%':'–'));
@@ -496,10 +496,14 @@ function viewSet(v){
   const sb = el('button','btn ghost','儲存秒數'); sb.onclick = async () => { if (await act('adm_setSec', si.value)) { toast('已儲存'); load(); } }; f2.appendChild(sb);
   c2.appendChild(f2);
   const f4 = el('div','form');
-  const l4 = el('label','','個人賽題數（其餘題目留給團體賽）'); const so = el('input','in'); so.type = 'number'; so.id = 's-solo'; so.value = D.soloCount; l4.appendChild(so); f4.appendChild(l4);
+  const l4 = el('label','','個人賽題數'); const so = el('input','in'); so.type = 'number'; so.id = 's-solo'; so.value = D.soloCount; l4.appendChild(so); f4.appendChild(l4);
   const sob = el('button','btn ghost','儲存題數'); sob.onclick = async () => { if (await act('adm_setSolo', so.value)) { toast('已儲存'); load(); } }; f4.appendChild(sob);
   c2.appendChild(f4);
-  c2.appendChild(el('p','mute','題庫共 ' + D.totalAll + ' 題：第 1～' + D.soloCount + ' 題是個人賽，第 ' + (D.soloCount + 1) + '～' + D.totalAll + ' 題是團體賽。'));
+  const f5 = el('div','form');
+  const l5 = el('label','','團體賽題數（可以跟個人賽重複出題）'); const te = el('input','in'); te.type = 'number'; te.id = 's-team'; te.value = D.teamCount; l5.appendChild(te); f5.appendChild(l5);
+  const teb = el('button','btn ghost','儲存題數'); teb.onclick = async () => { if (await act('adm_setTeam', te.value)) { toast('已儲存'); load(); } }; f5.appendChild(teb);
+  c2.appendChild(f5);
+  c2.appendChild(el('p','mute','題庫共 ' + D.totalAll + ' 題：個人賽考第 1～' + D.soloCount + ' 題；團體賽考第 1～' + D.teamCount + ' 題。兩邊各自獨立取題，重疊的題目會再考一次，不會因為個人賽考過就跳過。'));
   const f3 = el('div','form');
   const l3 = el('label','','新的後台密碼'); const pi = el('input','in'); pi.id = 's-pw'; pi.type = 'text'; pi.placeholder = '至少 4 個字'; l3.appendChild(pi); f3.appendChild(l3);
   const pb = el('button','btn ghost','更改密碼'); pb.onclick = async () => { if (await act('adm_setPassword', pi.value)) { PW = pi.value.trim(); ssSet(PW); toast('密碼已更改'); pi.value=''; } }; f3.appendChild(pb);
